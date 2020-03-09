@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteInEditMode]
 public class MeshGenerator : MonoBehaviour
 {
     Mesh mesh;
@@ -54,7 +55,7 @@ public class MeshGenerator : MonoBehaviour
         triangles[17] = 5;
 
         triangles[18] = 2;
-        triangles[19] = 4;
+        triangles[19] = 0;
         triangles[20] = 6;
 
         triangles[21] = 6;
@@ -70,16 +71,23 @@ public class MeshGenerator : MonoBehaviour
         triangles[29] = 7;
 
         triangles[30] = 0;
-        triangles[31] = 5;
-        triangles[32] = 4;
+        triangles[31] = 1;
+        triangles[32] = 5;
 
-        triangles[33] = 1;
-        triangles[34] = 0;
-        triangles[35] = 5;
+        triangles[33] = 0;
+        triangles[34] = 5;
+        triangles[35] = 4;
+
+        // 6 7
+        // 4 5
+
+        // 2 3
+        // 0 1
 
         mesh.Clear();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.RecalculateNormals();
     }
 
     // Update is called once per frame
