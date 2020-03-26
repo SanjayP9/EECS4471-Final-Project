@@ -1,0 +1,11 @@
+status
+play
+abort
+status
+move(N)
+status
+abort
+test(100)
+move(NE)
+status
+abort

@@ -1,0 +1,20 @@
+--Tests losing condition in test mode (lose by out of life).
+test(20,40,70,80,100)
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass

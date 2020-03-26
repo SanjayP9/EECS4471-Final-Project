@@ -1,0 +1,7 @@
+test(45)
+land
+status
+move(NW)
+move(W)
+move(W)
+land

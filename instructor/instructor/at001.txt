@@ -1,0 +1,16 @@
+-- Tests winning condition in test mode.
+test(3,5,7,15,30)
+abort
+test(3,5,7,15,30)
+pass
+pass
+pass
+pass
+move(W)
+land
+status
+liftoff
+move(SW)
+move(S)
+land
+status

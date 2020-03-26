@@ -1,0 +1,21 @@
+--Tests winning condition in play mode.
+play
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+pass
+move(S)
+move(S)
+land
