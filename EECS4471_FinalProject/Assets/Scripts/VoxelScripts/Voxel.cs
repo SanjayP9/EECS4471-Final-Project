@@ -6,15 +6,28 @@ public class Voxel
 
     public bool Empty;
 	private Mesh mesh;
+    private MeshFilter meshFilter;
+
+    public Vector3 Position { get; private set; }
+
+    public enum Direction
+    {
+        Top,
+        Bottom,
+        Left,
+        Right,
+        Forward,
+        Back
+    }
 
 	public Voxel(bool empty)
 	{
 		Empty = empty;
 	}
 
-	public Mesh GetMesh(Vector3 position)
+    public Mesh GetMesh(Vector3 position)
 	{
-		if (mesh == null)
+		if (mesh == null && !Empty)
 		{
 			mesh = new Mesh();
 			mesh.MarkDynamic();
@@ -83,6 +96,8 @@ public class Voxel
             mesh.vertices = vertices;
             mesh.triangles = triangles;
             mesh.RecalculateNormals();
+
+            Position = position;
 		}
 
 		return mesh;
