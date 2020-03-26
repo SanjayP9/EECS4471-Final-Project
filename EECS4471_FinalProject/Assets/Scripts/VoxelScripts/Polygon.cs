@@ -7,6 +7,8 @@ public class Polygon : MonoBehaviour
     Chunk[] chunks = new Chunk[1];
     MeshFilter meshFilter;
 
+    float timer = 0.0f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -18,6 +20,6 @@ public class Polygon : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        timer += Time.deltaTime;
     }
 }
