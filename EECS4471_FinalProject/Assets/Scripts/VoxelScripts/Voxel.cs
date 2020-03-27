@@ -2,7 +2,7 @@
 
 public class Voxel
 {
-    public const float VOXEL_SIZE = 0.1f;
+    public const float VOXEL_SIZE = 0.05f;
 
     public bool Empty;
 	private Mesh mesh;

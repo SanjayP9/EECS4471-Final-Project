@@ -1,54 +1,53 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using Direction = Voxel.Direction;
 
-public class Chunk
+public class Chunk : MonoBehaviour
 {
-    public const int CHUNK_SIZE = 8;
+    public const int CHUNK_SIZE = 16;
 
     private Mesh mesh;
+    private Polygon polygon;
+    private Vector3 chunkOffset;
 
     private const float VOXEL_SIZE = Voxel.VOXEL_SIZE;
+    private Dictionary<Vector3, int> indicesMap;
+    private List<Vector3> vertices;
+    private List<int> triangles;
+    private List<Vector3> normals;
 
-    byte[,,] voxelArray = new byte[CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE];
-    Dictionary<Vector3, int> indicesMap;
-    List<Vector3> vertices;
-    List<int> triangles;
+    public byte[,,] Voxels { get; } = new byte[CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE];
 
-    Transform transform;
+    public Mesh GetMesh() { return mesh; }
 
-    public byte[,,] Voxels()
-    {
-        return voxelArray;
-    }
+    public int[] index;
 
-    public Mesh GetMesh()
-    {
-        return mesh;
-    }
-
-    public Chunk(Transform transform, Material mat)
+    public void Init(Polygon polygon, int a_x, int a_y, int a_z, Vector3 offset, Material mat)
     {
         mesh = new Mesh();
         mesh.MarkDynamic();
-        this.transform = transform;
+        chunkOffset = offset;
+        this.polygon = polygon;
 
-        for (int x = 0; x < voxelArray.GetLength(0); x++)
+        index = new int[] { a_x, a_y, a_z };
+
+        for (int x = 0; x < Voxels.GetLength(0); x++)
         {
-            for (int y = 0; y < voxelArray.GetLength(0); y++)
+            for (int y = 0; y < Voxels.GetLength(1); y++)
             {
-                for (int z = 0; z < voxelArray.GetLength(0); z++)
+                for (int z = 0; z < Voxels.GetLength(2); z++)
                 {
-                    if (z % 2 == 0 || y % 2 == 0 || x % 2 == 0)
-                    {
-                        voxelArray[x, y, z] = 1;
-                    }
+                    Voxels[x, y, z] = 1;
                 }
             }
         }
 
-        RecomputeMesh();
+        GetComponent<MeshFilter>().mesh = mesh;
+        GetComponent<MeshRenderer>().material = mat;
+        gameObject.AddComponent<BoxCollider>();
     }
 
     public void RecomputeMesh()
@@ -56,16 +55,17 @@ public class Chunk
         vertices = new List<Vector3>();
         triangles = new List<int>();
         indicesMap = new Dictionary<Vector3, int>();
+        normals = new List<Vector3>();
 
-        for (int x = 0; x < voxelArray.GetLength(0); x++)
+        for (int x = 0; x < Voxels.GetLength(0); x++)
         {
-            for (int y = 0; y < voxelArray.GetLength(0); y++)
+            for (int y = 0; y < Voxels.GetLength(0); y++)
             {
-                for (int z = 0; z < voxelArray.GetLength(0); z++)
+                for (int z = 0; z < Voxels.GetLength(0); z++)
                 {
-                    if (voxelArray[x, y, z] == 1)
+                    if (Voxels[x, y, z] == 1)
                     {
-                        GenerateVoxel(x, y, z, new Vector3(x * VOXEL_SIZE, y * VOXEL_SIZE, z * VOXEL_SIZE));
+                        GenerateVoxel(x, y, z, (new Vector3(x, y, z) * VOXEL_SIZE));
                     }
                 }
             }
@@ -74,56 +74,172 @@ public class Chunk
         mesh.Clear();
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
+        mesh.normals = normals.ToArray();
         mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
+        //mesh.RecalculateNormals();
+        transform.position = chunkOffset;
+        GetComponent<BoxCollider>().size = mesh.bounds.size;
+        GetComponent<BoxCollider>().center = mesh.bounds.center;
     }
 
     private void GenerateVoxel(int x, int y, int z, Vector3 pos)
     {
-        if (x + 1 >= voxelArray.GetLength(0) || voxelArray[x + 1, y, z] == 0)
+        if (x + 1 >= Voxels.GetLength(0))
         {
-            GenerateFace(pos, Direction.Right);
+            if (!GetAdjacent(x, y, z, Direction.Right))
+                GenerateFace(x, y, z, pos, Direction.Right);
         }
+        else if (Voxels[x + 1, y, z] == 0) 
+            GenerateFace(x, y, z, pos, Direction.Right);
 
-        if (x - 1 < 0 || voxelArray[x - 1, y, z] == 0)
+        if (x - 1 < 0)
         {
-            GenerateFace(pos, Direction.Left);
+            if (!GetAdjacent(x, y, z, Direction.Left))
+                GenerateFace(x, y, z, pos, Direction.Left);
         }
+        else if (Voxels[x - 1, y, z] == 0)
+            GenerateFace(x, y, z, pos, Direction.Left);
 
-        if (y + 1 >= voxelArray.GetLength(0) || voxelArray[x, y + 1, z] == 0)
+        if (y + 1 >= Voxels.GetLength(1))
         {
-            GenerateFace(pos, Direction.Top);
+            if (!GetAdjacent(x, y, z, Direction.Top))
+                GenerateFace(x, y, z, pos, Direction.Top);
         }
+        else if (Voxels[x, y + 1, z] == 0)
+            GenerateFace(x, y, z, pos, Direction.Top);
 
-        if (y - 1 < 0 || voxelArray[x, y - 1, z] == 0)
+        if (y - 1 < 0)
         {
-            GenerateFace(pos, Direction.Bottom);
+            if (!GetAdjacent(x, y, z, Direction.Bottom))
+                GenerateFace(x, y, z, pos, Direction.Bottom);
         }
+        else if (Voxels[x, y - 1, z] == 0)
+            GenerateFace(x, y, z, pos, Direction.Bottom);
 
-        if (z + 1 >= voxelArray.GetLength(0) || voxelArray[x, y, z + 1] == 0)
+        if (z + 1 >= Voxels.GetLength(2))
         {
-            GenerateFace(pos, Direction.Forward);
+            if (!GetAdjacent(x, y, z, Direction.Forward))
+                GenerateFace(x, y, z, pos, Direction.Forward);
         }
+        else if (Voxels[x, y, z + 1] == 0)
+            GenerateFace(x, y, z, pos, Direction.Forward);
 
-        if (z - 1 < 0 || voxelArray[x, y, z - 1] == 0)
+        
+        if (z - 1 < 0)
         {
-            GenerateFace(pos, Direction.Back);
+            if (!GetAdjacent(x, y, z, Direction.Back))
+                GenerateFace(x, y, z, pos, Direction.Back);
         }
+        else if (Voxels[x, y, z - 1] == 0)
+            GenerateFace(x, y, z, pos, Direction.Back);
     }
 
-    private void AddToIndexMap(Vector3[] vector)
+    /// <summary>
+    /// Returns true if the adjacent space in that direction is occupied
+    /// </summary>
+    public bool GetAdjacent(int x, int y, int z, Direction dir)
     {
-        foreach (Vector3 temp in vector)
+        switch (dir)
         {
-            if (!indicesMap.ContainsKey(temp))
-            {
-                indicesMap.Add(temp, indicesMap.Count);
-                vertices.Add(temp);
-            }
+            case Direction.Top:
+                if (index[1] + 1 < polygon.Chunks.GetLength(1))
+                {
+                    return polygon.Chunks[index[0], index[1] + 1, index[2]].Voxels[x, 0, z] == 1;
+                }
+                return false;
+            case Direction.Bottom:
+                if (index[1] - 1 >= 0)
+                {
+                    return polygon.Chunks[index[0], index[1] - 1, index[2]].Voxels[x, CHUNK_SIZE - 1, z] == 1;
+                }
+                return false;
+            case Direction.Left:
+                if (index[0] - 1 >= 0)
+                {
+                    return polygon.Chunks[index[0] - 1, index[1], index[2]].Voxels[CHUNK_SIZE - 1, y, z] == 1;
+                }
+                return false;
+            case Direction.Right:
+                if (index[0] + 1 < polygon.Chunks.GetLength(0))
+                {
+                    return polygon.Chunks[index[0] + 1, index[1], index[2]].Voxels[0, y, z] == 1;
+                }
+                return false;
+            case Direction.Forward:
+                if (index[2] + 1 < polygon.Chunks.GetLength(2))
+                {
+                    return polygon.Chunks[index[0], index[1], index[2] + 1].Voxels[x, y, 0] == 1;
+                }
+                return false;
+            case Direction.Back:
+                if (index[2] - 1 >= 0)
+                {
+                    return polygon.Chunks[index[0], index[1], index[2] - 1].Voxels[x, y, CHUNK_SIZE - 1] == 1;
+                }
+                return false;
         }
+
+        return false;
     }
 
-    private void GenerateFace(Vector3 pos, Direction dir)
+    private void AddToIndexMap(int x, int y, int z, Vector3[] vector, Direction dir)
+    {
+        foreach (Vector3 v in vector)
+        {
+            /*
+            if (!indicesMap.ContainsKey(v))
+            {
+                indicesMap.Add(v, indicesMap.Count);
+                vertices.Add(v);
+            }
+            */
+            vertices.Add(v);
+            normals.Add(DirToVector(dir));
+        }
+
+        
+        triangles.Add(vertices.Count - 4); // vertex 0
+        triangles.Add(vertices.Count - 3); // vertex 1
+        triangles.Add(vertices.Count - 2); // vertex 2
+
+        triangles.Add(vertices.Count - 4); // vertex 0
+        triangles.Add(vertices.Count - 2); // vertex 2
+        triangles.Add(vertices.Count - 1); // vertex 3
+        
+
+        /*
+        triangles.Add(indicesMap[vector[0]]); // vertex 0
+        triangles.Add(indicesMap[vector[1]]); // vertex 1
+        triangles.Add(indicesMap[vector[2]]); // vertex 2
+
+        triangles.Add(indicesMap[vector[0]]); // vertex 0
+        triangles.Add(indicesMap[vector[2]]); // vertex 2
+        triangles.Add(indicesMap[vector[3]]); // vertex 3
+        */
+    }
+
+    private Vector3 DirToVector(Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.Top:
+                return Vector3.up;
+            case Direction.Bottom:
+                return Vector3.down;
+            case Direction.Left:
+                return Vector3.left;
+            case Direction.Right:
+                return Vector3.right;
+            case Direction.Forward:
+                return Vector3.forward;
+            case Direction.Back:
+                return Vector3.back;
+        }
+
+        return Vector3.zero;
+    }
+
+    private void GenerateFace(int x, int y, int z, Vector3 pos, Direction dir)
     {
         Vector3[] temp = new Vector3[4];
         switch (dir)
@@ -133,52 +249,44 @@ public class Chunk
                 temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
                 temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
                 temp[3] = new Vector3(pos.x, pos.y, pos.z);
-                AddToIndexMap(temp);
                 break;
             case Direction.Bottom:
                 temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
                 temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
                 temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
                 temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                AddToIndexMap(temp);
                 break;
             case Direction.Left:
                 temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
                 temp[1] = new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE);
                 temp[2] = new Vector3(pos.x, pos.y, pos.z);
                 temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
-                AddToIndexMap(temp);
                 break;
             case Direction.Right:
                 temp[0] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
                 temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
                 temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
                 temp[3] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                AddToIndexMap(temp);
                 break;
             case Direction.Forward:
                 temp[0] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
                 temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
                 temp[2] = new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE);
                 temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                AddToIndexMap(temp);
                 break;
             case Direction.Back:
                 temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
                 temp[1] = new Vector3(pos.x, pos.y, pos.z);
                 temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
                 temp[3] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
-                AddToIndexMap(temp);
                 break;
         }
 
-        triangles.Add(indicesMap[temp[0]]); // vertex 0
-        triangles.Add(indicesMap[temp[1]]); // vertex 1
-        triangles.Add(indicesMap[temp[2]]); // vertex 2
+        AddToIndexMap(x, y, z, temp, dir);
+    }
 
-        triangles.Add(indicesMap[temp[0]]); // vertex 0
-        triangles.Add(indicesMap[temp[2]]); // vertex 2
-        triangles.Add(indicesMap[temp[3]]); // vertex 3
+    void OnDrawGizmos()
+    {
     }
 
     /*
