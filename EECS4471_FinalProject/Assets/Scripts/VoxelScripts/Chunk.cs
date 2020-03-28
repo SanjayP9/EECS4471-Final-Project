@@ -25,7 +25,7 @@ public class Chunk : MonoBehaviour
 
     public int[] index;
 
-    public void Init(Polygon polygon, int a_x, int a_y, int a_z, Vector3 offset, Material mat)
+    public void Init(Polygon polygon, int a_x, int a_y, int a_z, Vector3 offset, Material mat, byte defaultVoxel)
     {
         mesh = new Mesh();
         mesh.MarkDynamic();
@@ -40,7 +40,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < Voxels.GetLength(2); z++)
                 {
-                    Voxels[x, y, z] = 1;
+                    Voxels[x, y, z] = defaultVoxel;
                 }
             }
         }

@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Valve.VR;
 
 public class Polygon : MonoBehaviour
 {
-    public Chunk[,,] Chunks { get; } = new Chunk[4,4,4];
+    public Chunk[,,] Chunks { get; } = new Chunk[12,12,12];
     MeshFilter meshFilter;
 
     float timer = 0.0f;
@@ -30,7 +31,7 @@ public class Polygon : MonoBehaviour
                     Chunks[x, y, z] = chunk.GetComponent<Chunk>();
                     Chunks[x, y, z].Init(this, x, y, z,
                         transform.position + (new Vector3(x, y, z) * Chunk.CHUNK_SIZE * Voxel.VOXEL_SIZE), 
-                        GetComponent<MeshRenderer>().material);
+                        GetComponent<MeshRenderer>().material, (x > 6 && x < 8 && y > 6 && y < 8 && z > 6 && z < 8) ? (byte)1 : (byte)0);
                 }
             }
         }
@@ -78,6 +79,16 @@ public class Polygon : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        Ray r = new Ray(Camera.main.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+
+        if (Physics.Raycast(r, out RaycastHit hit))
+        {
+            Gizmos.DrawLine(r.origin, hit.point);
+        }
+
+        Debug.Log(Camera.main.ScreenToWorldPoint(Input.mousePosition, Camera.MonoOrStereoscopicEye.Right));
+        Gizmos.DrawLine(r.origin, r.direction);
+
         /*
         foreach (Chunk c in Chunks)
         {
