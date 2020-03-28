@@ -1,5 +1,0 @@
-test(30)
-move(S)
-move(S)
-land
-wormhole
