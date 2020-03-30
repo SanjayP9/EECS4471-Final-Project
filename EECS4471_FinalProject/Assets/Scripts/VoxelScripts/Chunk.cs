@@ -7,7 +7,7 @@ using Direction = Voxel.Direction;
 
 public class Chunk : MonoBehaviour
 {
-    public const int CHUNK_SIZE = 32;
+    public const int CHUNK_SIZE = 16;
 
     private Mesh mesh;
     private Polygon polygon;
@@ -24,6 +24,8 @@ public class Chunk : MonoBehaviour
     public Mesh GetMesh() { return mesh; }
 
     public int[] index;
+
+    public bool Empty => vertices.Count == 0;
 
     public void Init(Polygon polygon, int a_x, int a_y, int a_z, Vector3 offset, Material mat, byte defaultVoxel)
     {
@@ -53,6 +55,9 @@ public class Chunk : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshRenderer>().material = mat;
         gameObject.AddComponent<BoxCollider>();
+        GetComponent<BoxCollider>().size = Vector3.one * CHUNK_SIZE / 200f;
+        GetComponent<BoxCollider>().center = new Vector3(CHUNK_SIZE / 400f, 0.035f, CHUNK_SIZE / 400f);
+        GetComponent<BoxCollider>().isTrigger = true;
     }
 
     public void RecomputeMesh()
@@ -83,8 +88,6 @@ public class Chunk : MonoBehaviour
         //mesh.RecalculateBounds();
         //mesh.RecalculateNormals();
         transform.position = chunkOffset;
-        GetComponent<BoxCollider>().size = mesh.bounds.size;
-        GetComponent<BoxCollider>().center = mesh.bounds.center;
     }
 
     private void GenerateVoxel(int x, int y, int z, Vector3 pos)
@@ -129,7 +132,6 @@ public class Chunk : MonoBehaviour
         else if (Voxels[x, y, z + 1] == 0)
             GenerateFace(x, y, z, pos, Direction.Forward);
 
-        
         if (z - 1 < 0)
         {
             if (!GetAdjacent(x, y, z, Direction.Back))
@@ -290,8 +292,77 @@ public class Chunk : MonoBehaviour
         AddToIndexMap(x, y, z, temp, dir);
     }
 
+    private Collider other;
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.name == "Cutter")
+        {
+            this.other = other;
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        this.other = null;
+    }
+
+    void Update()
+    {
+        if (other != null)
+        {
+            // Get hit location
+            Ray r = new Ray(other.transform.position - (other.transform.forward * 0.08f), other.transform.forward);
+
+            if (Physics.Raycast(r, out RaycastHit hit, 0.16f, 1 << 8))
+            {
+                int[] coordinates = VectorToCoord(hit.point);
+                Debug.Log(coordinates[0] + ", " + coordinates[1] + ", " + coordinates[2] );
+            }
+        }
+    }
+
+    int[] coords;
+    private int[] VectorToCoord(Vector3 position)
+    {
+        Vector3 convertedVector = position - chunkOffset;
+        Debug.Log("Position: " + position);
+        convertedVector /= VOXEL_SIZE * Voxels.GetLength(0);
+
+        coords = new [] {(int) convertedVector.x, (int) convertedVector.y, (int) convertedVector.z};
+
+
+        return coords;
+    }
+
     void OnDrawGizmos()
     {
+        if (other != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(other.transform.position - (other.transform.forward * 0.08f), other.transform.position + (other.transform.forward * 0.08f));
+
+            Ray r = new Ray(other.transform.position - (other.transform.forward * 0.08f), other.transform.forward);
+
+            if (Physics.Raycast(r, out RaycastHit hit, 0.16f, 1 << 8))
+            {
+                Gizmos.DrawSphere(hit.point, 0.01f);
+                Gizmos.color = Color.blue;
+                Gizmos.DrawCube(new Vector3(
+                    chunkOffset.x + (VOXEL_SIZE * coords[0]),
+                    chunkOffset.y + (VOXEL_SIZE * coords[1]),
+                    chunkOffset.z + (VOXEL_SIZE * coords[2])
+                ), Vector3.one * 0.005f);
+
+
+            }
+
+            
+
+            //Gizmos.DrawRay(r);
+        }
+
+        //Gizmos.color = Color.red;
+        //Gizmos.DrawSphere(chunkOffset, 0.005f);
     }
 
     /*

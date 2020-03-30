@@ -14,6 +14,9 @@ public class Polygon : MonoBehaviour
 
     private Camera mainCam;
 
+    private int x = 0, y = 0, z = 0;
+    private int x_c = 0, y_c = 0, z_c = 0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -30,8 +33,10 @@ public class Polygon : MonoBehaviour
                     GameObject chunk = Instantiate(ChunkPrefab, transform);
                     Chunks[x, y, z] = chunk.GetComponent<Chunk>();
                     Chunks[x, y, z].Init(this, x, y, z,
-                        transform.position + (new Vector3(x, y, z) * Chunk.CHUNK_SIZE * Voxel.VOXEL_SIZE), 
-                        GetComponent<MeshRenderer>().material, (x > 2 && x < 4 && y > 2 && y < 4 && z > 2 && z < 4) ? (byte)1 : (byte)0);
+                        transform.position + (new Vector3(x, y, z) * Chunk.CHUNK_SIZE * Voxel.VOXEL_SIZE),
+                        GetComponent<MeshRenderer>().material, (x >= 1 && x <= 4 && y >= 1 && y <= 4 && z >= 1 && z <= 4) ? (byte)1 : (byte)0);
+                        //GetComponent<MeshRenderer>().material, 1);
+                    chunk.layer = 8;
                 }
             }
         }
@@ -46,12 +51,13 @@ public class Polygon : MonoBehaviour
     void Update()
     {
 
-        timer += Time.deltaTime;
+        //timer += Time.deltaTime;
 
 
-        if (timer >= 0.05f)
+        if (timer >= 0.01f)
         {
-            for (int i = 0; i < 3; i++)
+            
+            for (int i = 0; i < 10; i++)
             {
                 Chunk c = Chunks[Random.Range(0, Chunks.GetLength(0)), Random.Range(0, Chunks.GetLength(1)),
                     Random.Range(0, Chunks.GetLength(2))];
