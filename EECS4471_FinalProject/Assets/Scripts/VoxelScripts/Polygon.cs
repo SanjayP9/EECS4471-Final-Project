@@ -11,6 +11,7 @@ public class Polygon : MonoBehaviour
     float timer = 0.0f;
 
     public GameObject ChunkPrefab;
+    public ComputeShader MeshShader;
 
     private Camera mainCam;
 
