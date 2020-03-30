@@ -5,7 +5,7 @@ using Valve.VR;
 
 public class Polygon : MonoBehaviour
 {
-    public Chunk[,,] Chunks { get; } = new Chunk[12,12,12];
+    public Chunk[,,] Chunks { get; } = new Chunk[6,6,6];
     MeshFilter meshFilter;
 
     float timer = 0.0f;
@@ -31,7 +31,7 @@ public class Polygon : MonoBehaviour
                     Chunks[x, y, z] = chunk.GetComponent<Chunk>();
                     Chunks[x, y, z].Init(this, x, y, z,
                         transform.position + (new Vector3(x, y, z) * Chunk.CHUNK_SIZE * Voxel.VOXEL_SIZE), 
-                        GetComponent<MeshRenderer>().material, (x > 6 && x < 8 && y > 6 && y < 8 && z > 6 && z < 8) ? (byte)1 : (byte)0);
+                        GetComponent<MeshRenderer>().material, (x > 2 && x < 4 && y > 2 && y < 4 && z > 2 && z < 4) ? (byte)1 : (byte)0);
                 }
             }
         }
@@ -45,50 +45,70 @@ public class Polygon : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        foreach (Chunk c in Chunks)
+
+        timer += Time.deltaTime;
+
+
+        if (timer >= 0.05f)
         {
-            /*
-            Vector3[] boundsCorners = new Vector3[8];
-
-            boundsCorners[0] = c.GetComponent<MeshRenderer>().bounds.min;
-            boundsCorners[1] = c.GetComponent<MeshRenderer>().bounds.max;
-            boundsCorners[2] = new Vector3(boundsCorners[0].x, boundsCorners[0].y, boundsCorners[1].z);
-            boundsCorners[3] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[0].z);
-            boundsCorners[4] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[0].z);
-            boundsCorners[5] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[1].z);
-            boundsCorners[6] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[1].z);
-            boundsCorners[7] = new Vector3(boundsCorners[1].x, boundsCorners[1].y, boundsCorners[0].z);
-
-            foreach (Vector3 corner in boundsCorners)
+            for (int i = 0; i < 3; i++)
             {
-                Physics.Raycast(new Ray(mainCam.transform.position, corner - mainCam.transform.position), out RaycastHit hit);
+                Chunk c = Chunks[Random.Range(0, Chunks.GetLength(0)), Random.Range(0, Chunks.GetLength(1)),
+                    Random.Range(0, Chunks.GetLength(2))];
 
-                if (hit.transform != null)
+                c.Voxels[Random.Range(0, c.Voxels.GetLength(0)), Random.Range(0, c.Voxels.GetLength(1)),
+                    Random.Range(0, c.Voxels.GetLength(2))] = 1;
+
+                c.RecomputeMesh();
+                /*
+                Vector3[] boundsCorners = new Vector3[8];
+
+                boundsCorners[0] = c.GetComponent<MeshRenderer>().bounds.min;
+                boundsCorners[1] = c.GetComponent<MeshRenderer>().bounds.max;
+                boundsCorners[2] = new Vector3(boundsCorners[0].x, boundsCorners[0].y, boundsCorners[1].z);
+                boundsCorners[3] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[0].z);
+                boundsCorners[4] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[0].z);
+                boundsCorners[5] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[1].z);
+                boundsCorners[6] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[1].z);
+                boundsCorners[7] = new Vector3(boundsCorners[1].x, boundsCorners[1].y, boundsCorners[0].z);
+
+                foreach (Vector3 corner in boundsCorners)
                 {
-                    c.GetComponent<MeshRenderer>().enabled = hit.transform.gameObject.GetComponent<Chunk>() == c;
+                    Physics.Raycast(new Ray(mainCam.transform.position, corner - mainCam.transform.position), out RaycastHit hit);
 
-                    if (c.GetComponent<MeshRenderer>().enabled)
+                    if (hit.transform != null)
                     {
-                        break;
+                        c.GetComponent<MeshRenderer>().enabled = hit.transform.gameObject.GetComponent<Chunk>() == c;
+
+                        if (c.GetComponent<MeshRenderer>().enabled)
+                        {
+                            break;
+                        }
                     }
                 }
+                */
             }
-            */
+
+            timer = 0f;
         }
     }
 
     void OnDrawGizmos()
     {
-        Ray r = new Ray(Camera.main.transform.position, Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        //Vector3 screenPos = Vector3.zero;
+        //screenPos.x = 0.15f * Camera.main.pixelWidth + 0.7f * Input.mousePosition.x;
+        //screenPos.y = 0.15f * Camera.main.pixelHeight + 0.7f * Input.mousePosition.y;
+        //Ray r = Camera.main.ScreenPointToRay(screenPos, Camera.main.stereoActiveEye);
 
+        /*
         if (Physics.Raycast(r, out RaycastHit hit))
         {
-            Gizmos.DrawLine(r.origin, hit.point);
+            //Gizmos.DrawLine(r.origin, hit.point);
         }
+        */
 
-        Debug.Log(Camera.main.ScreenToWorldPoint(Input.mousePosition, Camera.MonoOrStereoscopicEye.Right));
-        Gizmos.DrawLine(r.origin, r.direction);
-
+        //Debug.Log(r.direction);
+        //Gizmos.DrawLine(r.origin, r.origin + r.direction * 10f);
         /*
         foreach (Chunk c in Chunks)
         {

@@ -7,7 +7,7 @@ using Direction = Voxel.Direction;
 
 public class Chunk : MonoBehaviour
 {
-    public const int CHUNK_SIZE = 16;
+    public const int CHUNK_SIZE = 32;
 
     private Mesh mesh;
     private Polygon polygon;
@@ -32,7 +32,7 @@ public class Chunk : MonoBehaviour
         chunkOffset = offset;
         this.polygon = polygon;
 
-        index = new int[] { a_x, a_y, a_z };
+        index = new [] { a_x, a_y, a_z };
 
         for (int x = 0; x < Voxels.GetLength(0); x++)
         {
@@ -45,6 +45,11 @@ public class Chunk : MonoBehaviour
             }
         }
 
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+        indicesMap = new Dictionary<Vector3, int>();
+        normals = new List<Vector3>();
+
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshRenderer>().material = mat;
         gameObject.AddComponent<BoxCollider>();
@@ -52,10 +57,10 @@ public class Chunk : MonoBehaviour
 
     public void RecomputeMesh()
     {
-        vertices = new List<Vector3>();
-        triangles = new List<int>();
-        indicesMap = new Dictionary<Vector3, int>();
-        normals = new List<Vector3>();
+        vertices.Clear();
+        triangles.Clear();
+        indicesMap.Clear();
+        normals.Clear();
 
         for (int x = 0; x < Voxels.GetLength(0); x++)
         {
@@ -75,7 +80,7 @@ public class Chunk : MonoBehaviour
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.normals = normals.ToArray();
-        mesh.RecalculateBounds();
+        //mesh.RecalculateBounds();
         //mesh.RecalculateNormals();
         transform.position = chunkOffset;
         GetComponent<BoxCollider>().size = mesh.bounds.size;
