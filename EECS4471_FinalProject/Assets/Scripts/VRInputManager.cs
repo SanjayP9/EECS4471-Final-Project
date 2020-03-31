@@ -11,7 +11,6 @@ public class VRInputManager : MonoBehaviour
     public GameObject LeftHand, RightHand;
     private Ray leftRay, rightRay;
 
-
     // Start is called before the first frame update
     void Start()
     {

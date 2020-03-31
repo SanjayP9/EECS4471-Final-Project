@@ -51,53 +51,14 @@ public class Polygon : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    }
 
-        //timer += Time.deltaTime;
-
-
-        if (timer >= 0.01f)
-        {
-            
-            for (int i = 0; i < 10; i++)
-            {
-                Chunk c = Chunks[Random.Range(0, Chunks.GetLength(0)), Random.Range(0, Chunks.GetLength(1)),
-                    Random.Range(0, Chunks.GetLength(2))];
-
-                c.Voxels[Random.Range(0, c.Voxels.GetLength(0)), Random.Range(0, c.Voxels.GetLength(1)),
-                    Random.Range(0, c.Voxels.GetLength(2))] = 1;
-
-                c.RecomputeMesh();
-                /*
-                Vector3[] boundsCorners = new Vector3[8];
-
-                boundsCorners[0] = c.GetComponent<MeshRenderer>().bounds.min;
-                boundsCorners[1] = c.GetComponent<MeshRenderer>().bounds.max;
-                boundsCorners[2] = new Vector3(boundsCorners[0].x, boundsCorners[0].y, boundsCorners[1].z);
-                boundsCorners[3] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[0].z);
-                boundsCorners[4] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[0].z);
-                boundsCorners[5] = new Vector3(boundsCorners[0].x, boundsCorners[1].y, boundsCorners[1].z);
-                boundsCorners[6] = new Vector3(boundsCorners[1].x, boundsCorners[0].y, boundsCorners[1].z);
-                boundsCorners[7] = new Vector3(boundsCorners[1].x, boundsCorners[1].y, boundsCorners[0].z);
-
-                foreach (Vector3 corner in boundsCorners)
-                {
-                    Physics.Raycast(new Ray(mainCam.transform.position, corner - mainCam.transform.position), out RaycastHit hit);
-
-                    if (hit.transform != null)
-                    {
-                        c.GetComponent<MeshRenderer>().enabled = hit.transform.gameObject.GetComponent<Chunk>() == c;
-
-                        if (c.GetComponent<MeshRenderer>().enabled)
-                        {
-                            break;
-                        }
-                    }
-                }
-                */
-            }
-
-            timer = 0f;
-        }
+    public bool InBounds(int x, int y, int z)
+    {
+        return x >= 0 && y >= 0 && z >= 0 &&
+               x < Chunks.GetLength(0) &&
+               y < Chunks.GetLength(1) &&
+               z < Chunks.GetLength(2);
     }
 
     void OnDrawGizmos()
