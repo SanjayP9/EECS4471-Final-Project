@@ -7,9 +7,14 @@ using Debug = UnityEngine.Debug;
 public class VRInputManager : MonoBehaviour
 {
     public SteamVR_Action_Boolean InteractWithUI;
+    public SteamVR_Action_Boolean xButtonPress;
+    public SteamVR_Action_Boolean aButtonPress;
 
     public GameObject LeftHand, RightHand;
     private Ray leftRay, rightRay;
+
+    private bool leftMenuShow = false;
+    private bool rightMenuShow = false;
 
 
     // Start is called before the first frame update
@@ -18,16 +23,44 @@ public class VRInputManager : MonoBehaviour
         InteractWithUI.AddOnStateDownListener(OnTriggerDown, SteamVR_Input_Sources.LeftHand);
         InteractWithUI.AddOnStateDownListener(OnTriggerDown, SteamVR_Input_Sources.RightHand);
 
+        xButtonPress.AddOnStateDownListener(OnXButtonPress, SteamVR_Input_Sources.LeftHand);
+        aButtonPress.AddOnStateDownListener(OnAButtonPress, SteamVR_Input_Sources.RightHand);
+
         InteractWithUI.AddOnStateUpListener(OnTriggerUp, SteamVR_Input_Sources.LeftHand);
         InteractWithUI.AddOnStateUpListener(OnTriggerUp, SteamVR_Input_Sources.RightHand);
+
+        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = new Vector3(0.001f, 0.001f, 0.001f);
+        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = new Vector3(0.001f, 0.001f, 0.001f);
 
         leftRay = new Ray();
         rightRay = new Ray();
     }
 
+    public void OnXButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
+    {
+        leftMenuShow = !leftMenuShow;
+        Debug.Log("X was pressed " + leftMenuShow);
+        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = (leftMenuShow)?(new Vector3(0.001f, 0.001f, 0.001f)):(Vector3.zero);
+
+    }
+
+    public void OnAButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
+    {
+        rightMenuShow = !rightMenuShow;
+        Debug.Log("A was pressed " + rightMenuShow);
+        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = (rightMenuShow) ? (new Vector3(0.001f, 0.001f, 0.001f)) : (Vector3.zero);
+    }
+
+
     public void OnTriggerDown(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         Debug.Log((source == SteamVR_Input_Sources.LeftHand ? "Left" : "Right") + " Trigger was pressed");
+
+        // If left trigger is pressed and menu is showing the click buttons that are being pointed at
+        if (source == SteamVR_Input_Sources.LeftHand && leftMenuShow)
+        {
+
+        }
     }
 
     public void OnTriggerUp(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
