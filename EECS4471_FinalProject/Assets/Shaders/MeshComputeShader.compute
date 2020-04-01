@@ -1,0 +1,143 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+
+RWStructuredBuffer<int> voxelMasks;
+RWStructuredBuffer<int> faceArray;
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float3> vertices;
+RWStructuredBuffer<float3> normals;
+RWStructuredBuffer<int> triangles;
+
+
+const int TOP = 1;
+const int BOTTOM = 2;
+const int LEFT = 4;
+const int RIGHT = 8;
+const int FORWARD = 16;
+const int BACK = 32;
+
+const int CHUNK_SIZE = 16;
+const float VOXEL_SIZE = 0.005f;
+
+int voxelID;
+
+float3 GetNormal(int bit)
+{
+    if ((bit | TOP) == TOP) 
+    {
+        return float3(0, 1, 0);
+    }
+
+    if ((bit | BOTTOM) == BOTTOM)
+    {
+        return float3(0, -1, 0);
+    }
+
+    if ((bit | LEFT) == LEFT)
+    {
+        return float3(-1, 0, 0);
+    }
+
+    if ((bit | RIGHT) == RIGHT)
+    {
+        return float3(1, 0, 0);
+    }
+
+    if ((bit | FORWARD) == FORWARD)
+    {
+        return float3(0, 0, 1);
+    }
+
+    if ((bit | BACK) == BACK)
+    {
+        return float3(0, 0, -1);
+    }
+}
+
+
+void GenerateTriangles(int vertexIndex)
+{
+    triangles[voxelID * 3] = vertexIndex;
+    triangles[(voxelID * 3) + 1] = vertexIndex + 1;
+    triangles[(voxelID * 3) + 2] = vertexIndex + 2;
+
+    triangles[(voxelID * 3) + 4] = vertexIndex;
+    triangles[(voxelID * 3) + 5] = vertexIndex + 2;
+    triangles[(voxelID * 3) + 6] = vertexIndex + 3;
+}
+
+void GenerateVoxel(int x, int y, int z, int vertexOffset, int mask)
+{
+    if ((mask | TOP) == TOP)
+    {
+        vertices[vertexOffset++] = float3(x, y, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z);
+        vertices[vertexOffset++] = float3(x, y, z + VOXEL_SIZE);
+        GenerateTriangles(vertexOffset - 4);
+    }
+
+    if ((mask | BOTTOM) == BOTTOM)
+    {
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        GenerateTriangles(vertexOffset - 4);
+    }
+
+    if ((mask | LEFT) == LEFT)
+    {
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        GenerateTriangles(vertexOffset - 4);
+    }
+
+    if ((mask | RIGHT) == RIGHT)
+    {
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        GenerateTriangles(vertexOffset - 4);
+    }
+
+    if ((mask | FORWARD) == FORWARD)
+    {
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x, y, z + VOXEL_SIZE);
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z + VOXEL_SIZE);
+        GenerateTriangles(vertexOffset - 4);
+    }
+
+    if ((mask | BACK) == BACK)
+    {
+        vertices[vertexOffset++] = float3(x, y - VOXEL_SIZE, z);
+        vertices[vertexOffset++] = float3(x, y, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y, z);
+        vertices[vertexOffset++] = float3(x + VOXEL_SIZE, y - VOXEL_SIZE, z);
+        GenerateTriangles(vertexOffset - 4);
+    }
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int x = id.x;
+    int y = id.y;
+    int z = id.z;
+    voxelID = x + CHUNK_SIZE * (y + CHUNK_SIZE * z);
+
+    GenerateVoxel(x, y, z,
+        faceArray[x + CHUNK_SIZE * (y + CHUNK_SIZE * z)],
+        voxelMasks[x + CHUNK_SIZE * (y + CHUNK_SIZE * z)]
+    );
+
+}
+
