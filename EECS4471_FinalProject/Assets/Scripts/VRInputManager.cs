@@ -23,7 +23,7 @@ public class VRInputManager : MonoBehaviour
 
     private bool spotlightOn = false;
 
-    public GameObject SphereTool, CuttingTool;
+    public GameObject SphereTool, CuttingTool, ScaleCanvas;
     private Polygon polygon;
 
     private enum Functions
@@ -167,6 +167,15 @@ public class VRInputManager : MonoBehaviour
                                 break;
                         }
 
+                        if (currFunction == Functions.Scale) {
+                            switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
+                            {
+                                case "Scale +":
+                                    break;
+                                case "Scale -":
+                                    break;                              
+                            }
+                        }
                         IsRightTriggerDown = false;
                     }
                 }
@@ -219,7 +228,7 @@ public class VRInputManager : MonoBehaviour
             case Functions.Remove:
                 SphereTool.GetComponent<SphereTool>().AddMode = false;
                 break;
-            case Functions.Scale:
+            case Functions.Scale:                
                 break;
             case Functions.Translate:
                 break;
@@ -233,6 +242,7 @@ public class VRInputManager : MonoBehaviour
                 break;
         }
 
+        ScaleCanvas.SetActive(currFunction == Functions.Scale);
         SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove);
         CuttingTool.SetActive(currFunction == Functions.Cut);
     }
