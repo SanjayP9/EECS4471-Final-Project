@@ -23,7 +23,7 @@ public class VRInputManager : MonoBehaviour
 
     private bool spotlightOn = false;
 
-    public GameObject SphereTool, CuttingTool;
+    public GameObject SphereTool, CuttingTool, TranslateTool, TranslateControl;
     private Polygon polygon;
 
     private enum Functions
@@ -145,7 +145,7 @@ public class VRInputManager : MonoBehaviour
 
                     if (IsRightTriggerDown)
                     {
-                        switch(rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
+                        switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
                         {
                             case "Cut":
                                 currFunction = Functions.Cut;
@@ -161,13 +161,15 @@ public class VRInputManager : MonoBehaviour
                                 break;
                             case "Translate":
                                 currFunction = Functions.Translate;
+                                TranslateControl.transform.position = Camera.main.gameObject.transform.position + Camera.main.gameObject.transform.forward * 0.2f;
                                 break;
                             case "Rotate":
                                 currFunction = Functions.Rotate;
                                 break;
                         }
-
                         IsRightTriggerDown = false;
+                        leftMenuShow = false;
+                        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
                     }
                 }
 
@@ -198,8 +200,9 @@ public class VRInputManager : MonoBehaviour
                                 currFunction = Functions.SpawnSphere;
                                 break;
                         }
-
+                        rightMenuShow = false;
                         IsLeftTriggerDown = false;
+                        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
                     }
                 }
 
@@ -222,6 +225,19 @@ public class VRInputManager : MonoBehaviour
             case Functions.Scale:
                 break;
             case Functions.Translate:
+                // If colliding spheres and right trigger down then move control to match tool position then move polygon by delta value
+                TranslateTool.SetActive(true);
+                TranslateControl.SetActive(true);
+                if (TranslateTool.GetComponent<SphereTranslate>().collideWithControl && IsRightTriggerDown)
+                {
+                    Debug.Log("collision");
+
+                    Vector3 prevPos = TranslateControl.transform.position;
+
+                    TranslateControl.transform.position = TranslateTool.transform.position;
+
+                    polygon.transform.position += TranslateTool.transform.position - prevPos;
+                }
                 break;
             case Functions.Rotate:
                 break;
@@ -235,5 +251,7 @@ public class VRInputManager : MonoBehaviour
 
         SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove);
         CuttingTool.SetActive(currFunction == Functions.Cut);
+        TranslateTool.SetActive(currFunction == Functions.Translate);
+        TranslateControl.SetActive(currFunction == Functions.Translate);
     }
 }
