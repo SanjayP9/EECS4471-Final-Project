@@ -7,7 +7,7 @@ using Direction = Voxel.Direction;
 
 public class Chunk : MonoBehaviour
 {
-    public const int CHUNK_SIZE = 16;
+    public const int CHUNK_SIZE = 8;
 
     private Mesh mesh;
     private Polygon polygon;
@@ -20,7 +20,8 @@ public class Chunk : MonoBehaviour
     private List<Vector3> normals;
 
     public byte[][][] Voxels { get; } = new byte[CHUNK_SIZE][][];
-    private int[] voxelIndexes = new int[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+    public Vector3[][][] Center = new Vector3[CHUNK_SIZE][][];
+    private int[][][] voxelFaces = new int[CHUNK_SIZE][][];
 
     public Mesh GetMesh() { return mesh; }
 
@@ -57,13 +58,19 @@ public class Chunk : MonoBehaviour
         for (int x = 0; x < CHUNK_SIZE; x++)
         {
             Voxels[x] = new byte[CHUNK_SIZE][];
+            Center[x] = new Vector3[CHUNK_SIZE][];
+            voxelFaces[x] = new int[CHUNK_SIZE][];
             for (int y = 0; y < CHUNK_SIZE; y++)
             {
                 Voxels[x][y] = new byte[CHUNK_SIZE];
+                Center[x][y] = new Vector3[CHUNK_SIZE];
+                voxelFaces[x][y] = new int[CHUNK_SIZE];
                 for (int z = 0; z < CHUNK_SIZE; z++)
                 {
                     Voxels[x][y][z] = defaultVoxel;
-                    
+                    Vector3 v = new Vector3(x, y, z);
+                    Center[x][y][z] = v * VOXEL_SIZE;
+                    Center[x][y][z] += VOXEL_SIZE / 2f * new Vector3(1, -1, 1);
                 }
             }
         }
@@ -76,8 +83,8 @@ public class Chunk : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshRenderer>().material = mat;
         gameObject.AddComponent<BoxCollider>();
-        GetComponent<BoxCollider>().size = Vector3.one * CHUNK_SIZE / 200f;
-        GetComponent<BoxCollider>().center = new Vector3(CHUNK_SIZE / 400f, 0.035f, CHUNK_SIZE / 400f);
+        GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * VOXEL_SIZE;
+        GetComponent<BoxCollider>().center = new Vector3(GetComponent<BoxCollider>().size.x / 2f, 0.03f, GetComponent<BoxCollider>().size.z / 2f);
         GetComponent<BoxCollider>().isTrigger = true;
         X = a_x;
         Y = a_y;
@@ -112,16 +119,14 @@ public class Chunk : MonoBehaviour
                     if (Voxels[x][y][z] == 1)
                     {
                         GenerateVoxel(x, y, z, (new Vector3(x, y, z) * VOXEL_SIZE));
-                        voxelIndexes[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = vertices.Count;
                     }
-                    else
-                    {
-                        voxelIndexes[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = 0;
-                    }
+
+                    //voxelFaces[x][y][z] = GetFaces(x, y, z);
                 }
             }
         }
         RebuildTriangleArray();
+
 
         mesh.Clear();
         mesh.vertices = vertices.ToArray();
@@ -143,122 +148,6 @@ public class Chunk : MonoBehaviour
             triangles.Add(j + 2); // vertex 2
             triangles.Add(j + 3); // vertex 3
         }
-    }
-
-    private int GetNextIndex(int x, int y, int z)
-    {
-        z++;
-        bool carry = false;
-        if (z == CHUNK_SIZE)
-        {
-            z = 0;
-            carry = true;
-        }
-
-        if (carry)
-        {
-            y++;
-            carry = y == CHUNK_SIZE;
-            y = carry ? 0 : y;
-        }
-
-        if (carry)
-        {
-            x++;
-            if (x == CHUNK_SIZE) return -1;
-        }
-
-        return x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z;
-    }
-
-    public void ModifyVoxel(int x, int y, int z)
-    {
-        /*
-        vertices.Clear();
-        triangles.Clear();
-        indicesMap.Clear();
-        normals.Clear();
-        */
-
-        // Remove old voxel faces
-        int i = x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z;
-        int startingIndex = voxelIndexes[i];
-
-
-        int end = GetNextIndex(x, y, z);
-
-        if (end == -1)
-        {
-            end = vertices.Count - voxelIndexes[i - 1];
-        }
-        else
-        {
-            end = voxelIndexes[end];
-        }
-
-        for (int j = startingIndex; j < end; j++)
-        {
-            vertices.RemoveAt(j);
-        }
-
-        if (end - startingIndex > 0)
-        {
-            GenerateVoxel(x, y, z, new Vector3(x, y, z) * VOXEL_SIZE);
-        }
-
-        // Fix voxel indexes
-        if (i != voxelIndexes.Length - 1)
-        {
-            int diff = faces - (end - startingIndex);
-            if (diff != 0)
-            {
-                for (int k = i + 1; k < voxelIndexes.Length; k++)
-                {
-                    voxelIndexes[k] += faces;
-                }
-            }
-        }
-
-        // Rebuild triangle array
-        RebuildTriangleArray();
-
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
-        mesh.normals = normals.ToArray();
-
-        //mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
-
-        /*
-        if (numVerts > 0)
-        {
-            ComputeBuffer vertexBuffer = new ComputeBuffer(numVerts, 3 * sizeof(float));
-            ComputeBuffer normalBuffer = new ComputeBuffer(numVerts, 3 * sizeof(float));
-            ComputeBuffer triangleBuffer = new ComputeBuffer(numTriangles, sizeof(int));
-
-            meshShader.SetInts("voxelMasks", voxelMasks);
-            meshShader.SetInts("faceArray", faceArray);
-
-            meshShader.SetBuffer(handle, "vertices", vertexBuffer);
-            meshShader.SetBuffer(handle, "normals", normalBuffer);
-            meshShader.SetBuffer(handle, "triangles", triangleBuffer);
-
-            meshShader.Dispatch(handle, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
-
-            Vector3[] verts = new Vector3[numVerts];
-            Vector3[] norms = new Vector3[numVerts];
-            int[] tris = new int[numTriangles];
-
-            vertexBuffer.GetData(verts);
-            normalBuffer.GetData(norms);
-            triangleBuffer.GetData(tris);
-
-            mesh.Clear();
-            mesh.vertices = verts;
-            mesh.normals = norms;
-            mesh.triangles = tris;
-        }
-        */
     }
 
     private byte faces;
@@ -578,108 +467,25 @@ public class Chunk : MonoBehaviour
     {
         if (other != null && !Empty)
         {
-            // Get hit location
-            Ray[] rays = new Ray[4];
-            rays[0] = new Ray(other.transform.TransformPoint(0.5f, -0.5f, -0.5f), other.transform.forward);
-            rays[1] = new Ray(other.transform.TransformPoint(-0.5f, -0.5f, -0.5f), other.transform.forward);
-            rays[2] = new Ray(other.transform.TransformPoint(-0.5f, 0.5f, -0.5f), other.transform.forward);
-            rays[3] = new Ray(other.transform.TransformPoint(0.5f, 0.5f, -0.5f), other.transform.forward);
-
-            foreach (Ray r in rays)
-            {
-                Vector3 current = r.origin;
-                float distance = (current - r.origin).magnitude;
-
-                while (distance < 0.256f)
-                {
-                    int[] coordinates = VectorToCoord(current);
-
-                    if (coordinates[0] >= 0 && coordinates[1] >= 0 && coordinates[2] >= 0 &&
-                        coordinates[0] < CHUNK_SIZE && coordinates[1] < CHUNK_SIZE && coordinates[2] < CHUNK_SIZE)
-                    {
-                        if (Voxels[coords[0]][coords[1]][coords[2]] == 1)
-                        {
-                            Voxels[coords[0]][coords[1]][coords[2]] = 0;
-                            ModifyVoxel(coords[0], coords[1], coords[2]);
-                            
-                            dirty = true;
-                        }
-
-                        //Debug.Log(X + ", " + Y + ", " + Z + " -> " + coordinates[0] + ", " + coordinates[1] + ", " + coordinates[2]);
-                    }
-                    else
-                    {
-                        /*
-                        int chunk_x = X, chunk_y = Y, chunk_z = Z;
-                        if (coordinates[0] < 0)
-                        {
-                            coordinates[0] = CHUNK_SIZE + coordinates[0];
-                            chunk_x--;
-                        }
-                        else if (coordinates[0] > CHUNK_SIZE - 1)
-                        {
-                            coordinates[0] = coordinates[0] - CHUNK_SIZE;
-                            chunk_x++;
-                        }
-
-                        if (coordinates[1] < 0)
-                        {
-                            coordinates[1] = CHUNK_SIZE + coordinates[1];
-                            chunk_y--;
-                        }
-                        else if (coordinates[1] > CHUNK_SIZE - 1)
-                        {
-                            coordinates[1] = coordinates[1] - CHUNK_SIZE;
-                            chunk_y++;
-                        }
-
-                        if (coordinates[2] < 0)
-                        {
-                            coordinates[2] = CHUNK_SIZE + coordinates[2];
-                            chunk_z--;
-                        }
-                        else if (coordinates[2] > CHUNK_SIZE - 1)
-                        {
-                            coordinates[2] = coordinates[2] - CHUNK_SIZE;
-                            chunk_z++;
-                        }
-
-                        if (polygon.InBounds(chunk_x, chunk_y, chunk_z))
-                        {
-                            //Debug.Log(coordinates[0] + ", " + coordinates[1] + ", " + coordinates[2]);
-                            if (polygon.Chunks[chunk_x, chunk_y, chunk_z].Voxels[coordinates[0], coordinates[1], coordinates[2]] == 1)
-                            {
-                                polygon.Chunks[chunk_x, chunk_y, chunk_z].Voxels[coordinates[0], coordinates[1],
-                                    coordinates[2]] = 0;
-
-                                polygon.Chunks[chunk_x, chunk_y, chunk_z].MakeDirty();
-                            }
-                        }
-                        */
-                    }
-
-                    distance += VOXEL_SIZE;
-                    current += VOXEL_SIZE * other.transform.forward;
-                }
-            }
         }
 
         if (dirty)
         {
-            //RecomputeMesh();
+            RecomputeMesh();
             dirty = false;
         }
 
         chunkOffset = transform.position;
-        GetComponent<BoxCollider>().enabled = !Empty;
+        //GetComponent<BoxCollider>().enabled = !Empty;
     }
 
     public void MakeDirty() {  dirty = true;  }
 
-    private int[] coords = new int[3];
-    private int[] VectorToCoord(Vector3 position)
+    public int[] VectorToCoord(Vector3 position)
     {
+        int[] coords = new int[3];
         Vector3 convertedVector = position - transform.position;
+        
         convertedVector /= VOXEL_SIZE;
 
         coords[0] = convertedVector.x < 0f ? -1 : (int) convertedVector.x;
@@ -695,6 +501,19 @@ public class Chunk : MonoBehaviour
         {
             Gizmos.color = Color.red;
             //Gizmos.DrawLine(other.transform.position - (other.transform.forward * 0.08f), other.transform.position + (other.transform.forward * 0.08f));
+
+            /*
+            for (int x = 0; x < CHUNK_SIZE; x++)
+            {
+                for (int y = 0; y < CHUNK_SIZE; y++)
+                {
+                    for (int z = 0; z < CHUNK_SIZE; z++)
+                    {
+                        Gizmos.DrawLine(other.transform.position, transform.position + Center[x][y][z]);
+                    }
+                }
+            }
+            */
 
             Gizmos.DrawRay(other.transform.TransformPoint(0f, 0f, -1f), other.transform.forward);
         }
