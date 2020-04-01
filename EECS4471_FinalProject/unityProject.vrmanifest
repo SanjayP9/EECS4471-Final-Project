@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.eecs4471_finalproject.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "F:\\GitKrakenRepos\\4471 Project\\EECS4471-Final-Project\\EECS4471_FinalProject\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "N:\\4471_Project\\EECS4471-Final-Project\\EECS4471_FinalProject\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "EECS4471_FinalProject [Testing]"

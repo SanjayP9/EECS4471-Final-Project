@@ -7,9 +7,12 @@ public class SphereTool : MonoBehaviour
     public bool AddMode = true;
     private Polygon polygon;
 
+    private VRInputManager input;
+
     void Start()
     {
         polygon = GameObject.Find("Polygon").GetComponent<Polygon>();
+        input = GameObject.Find("[CameraRig]").GetComponent<VRInputManager>();
     }
 
     // Update is called once per frame
@@ -20,11 +23,12 @@ public class SphereTool : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
+        if (!input.IsLeftTriggerDown) return;
+
         Chunk c = other.GetComponent<Chunk>();
 
         float distance = GetComponent<SphereCollider>().radius * transform.localScale.x;
         if (c == null) return;
-        if (c.Empty) return;
         for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
         {
             for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
@@ -36,68 +40,67 @@ public class SphereTool : MonoBehaviour
                     c.Voxels[x][y][z] = (byte) (AddMode ? 1 : 0);
                     c.MakeDirty();
 
-                    if (x + 1 == Chunk.CHUNK_SIZE)
+                    for (int a_x = x - 1; a_x <= x + 1; a_x++)
                     {
-                        if (polygon.InBounds(c.X + 1, c.Y, c.Z))
+                        for (int a_y = y - 1; a_y <= y + 1; a_y++)
                         {
-                            if (!polygon.Chunks[c.X + 1, c.Y, c.Z].Empty)
+                            for (int a_z = z - 1; a_z <= z + 1; a_z++)
                             {
-                                polygon.Chunks[c.X + 1, c.Y, c.Z].MakeDirty();
-                            }
-                        }
-                    }
+                                Voxel.Direction result = c.InBounds(a_x, a_y, a_z);
 
-                    if (x - 1 < 0)
-                    {
-                        if (polygon.InBounds(c.X - 1, c.Y, c.Z))
-                        {
-                            if (!polygon.Chunks[c.X - 1, c.Y, c.Z].Empty)
-                            {
-                                polygon.Chunks[c.X - 1, c.Y, c.Z].MakeDirty();
-                            }
-                        }
-                    }
+                                if ((result & Voxel.Direction.Top) == Voxel.Direction.Top)
+                                {
+                                    if (polygon.InBounds(c.X, c.Y + 1, c.Z))
+                                    {
+                                        if (!polygon.Chunks[c.X, c.Y + 1, c.Z].Empty)
+                                            polygon.Chunks[c.X, c.Y + 1, c.Z].MakeDirty();
+                                    }
+                                }
 
-                    if (y + 1 == Chunk.CHUNK_SIZE)
-                    {
-                        if (polygon.InBounds(c.X, c.Y + 1, c.Z))
-                        {
-                            if (!polygon.Chunks[c.X, c.Y + 1, c.Z].Empty)
-                            {
-                                polygon.Chunks[c.X, c.Y + 1, c.Z].MakeDirty();
-                            }
-                        }
-                    }
+                                if ((result & Voxel.Direction.Bottom) == Voxel.Direction.Bottom)
+                                {
+                                    if (polygon.InBounds(c.X, c.Y - 1, c.Z))
+                                    {
+                                        if (!polygon.Chunks[c.X, c.Y - 1, c.Z])
+                                            polygon.Chunks[c.X, c.Y - 1, c.Z].MakeDirty();
+                                    }
+                                }
 
-                    if (y - 1 < 0)
-                    {
-                        if (polygon.InBounds(c.X, c.Y - 1, c.Z))
-                        {
-                            if (!polygon.Chunks[c.X, c.Y - 1, c.Z].Empty)
-                            {
-                                polygon.Chunks[c.X, c.Y - 1, c.Z].MakeDirty();
-                            }
-                        }
-                    }
+                                if ((result & Voxel.Direction.Left) == Voxel.Direction.Left)
+                                {
+                                    if (polygon.InBounds(c.X - 1, c.Y, c.Z))
+                                    {
+                                        if (!polygon.Chunks[c.X - 1, c.Y, c.Z])
+                                            polygon.Chunks[c.X - 1, c.Y, c.Z].MakeDirty();
+                                    }
+                                }
 
-                    if (z + 1 == Chunk.CHUNK_SIZE)
-                    {
-                        if (polygon.InBounds(c.X, c.Y, c.Z + 1))
-                        {
-                            if (!polygon.Chunks[c.X, c.Y, c.Z + 1].Empty)
-                            {
-                                polygon.Chunks[c.X, c.Y, c.Z + 1].MakeDirty();
-                            }
-                        }
-                    }
+                                if ((result & Voxel.Direction.Right) == Voxel.Direction.Right)
+                                {
+                                    if (polygon.InBounds(c.X + 1, c.Y, c.Z))
+                                    {
+                                        if (!polygon.Chunks[c.X + 1, c.Y, c.Z])
+                                            polygon.Chunks[c.X + 1, c.Y, c.Z].MakeDirty();
+                                    }
+                                }
 
-                    if (z - 1 < 0)
-                    {
-                        if (polygon.InBounds(c.X, c.Y, c.Z - 1))
-                        {
-                            if (!polygon.Chunks[c.X, c.Y, c.Z - 1].Empty)
-                            {
-                                polygon.Chunks[c.X, c.Y, c.Z - 1].MakeDirty();
+                                if ((result & Voxel.Direction.Forward) == Voxel.Direction.Forward)
+                                {
+                                    if (polygon.InBounds(c.X, c.Y, c.Z + 1))
+                                    {
+                                        if (!polygon.Chunks[c.X, c.Y, c.Z + 1])
+                                            polygon.Chunks[c.X, c.Y, c.Z + 1].MakeDirty();
+                                    }
+                                }
+
+                                if ((result & Voxel.Direction.Back) == Voxel.Direction.Back)
+                                {
+                                    if (polygon.InBounds(c.X, c.Y, c.Z - 1))
+                                    {
+                                        if (!polygon.Chunks[c.X, c.Y, c.Z - 1])
+                                            polygon.Chunks[c.X, c.Y, c.Z - 1].MakeDirty();
+                                    }
+                                }
                             }
                         }
                     }

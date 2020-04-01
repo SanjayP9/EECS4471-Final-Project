@@ -18,10 +18,13 @@ public class VRInputManager : MonoBehaviour
     private bool leftMenuShow = false;
     private bool rightMenuShow = false;
 
-    private bool isLeftTriggerDown = false;
-    private bool isRightTriggerDown = false;
+    public bool IsLeftTriggerDown = false;
+    public bool IsRightTriggerDown = false;
 
     private bool spotlightOn = false;
+
+    public GameObject SphereTool, CuttingTool;
+    private Polygon polygon;
 
     private enum Functions
     {
@@ -55,6 +58,8 @@ public class VRInputManager : MonoBehaviour
 
         leftRay = new Ray();
         rightRay = new Ray();
+
+        polygon = GameObject.Find("Polygon").GetComponent<Polygon>();
     }
 
     public void OnXButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
@@ -73,7 +78,7 @@ public class VRInputManager : MonoBehaviour
     public void OnBButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         spotlightOn = !spotlightOn;
-        GameObject.FindWithTag("Flashlight").GetComponent<Light>().intensity = (spotlightOn) ? (10) : (0);
+        GameObject.FindWithTag("Flashlight").GetComponent<Light>().intensity = (spotlightOn) ? (1) : (0);
     }
 
     public void OnTriggerDown(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
@@ -83,17 +88,26 @@ public class VRInputManager : MonoBehaviour
         // If left trigger is pressed and menu is showing the click buttons that are being pointed at
         if (source == SteamVR_Input_Sources.LeftHand)
         {
-            isLeftTriggerDown = true;
+            IsLeftTriggerDown = true;
         }
         else
         {
-            isRightTriggerDown = true;
+            IsRightTriggerDown = true;
         }
     }
 
     public void OnTriggerUp(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         //Debug.Log((source == SteamVR_Input_Sources.LeftHand ? "Left" : "Right") + " Trigger was released");
+
+        if (source == SteamVR_Input_Sources.LeftHand)
+        {
+            IsLeftTriggerDown = false;
+        }
+        else
+        {
+            IsRightTriggerDown = false;
+        }
     }
 
     // Update is called once per frame
@@ -123,13 +137,13 @@ public class VRInputManager : MonoBehaviour
         {
             RightHand.GetComponent<LineRenderer>().SetPositions(new[] { RightHand.transform.position, RightHand.transform.position + RightHand.transform.up * -0.2f });
 
-            if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, ~5))
+            if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, (1 << 5)))
             {
                 if (rightHit.collider.gameObject.tag.Equals("Button"))
                 {
                     rightHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
 
-                    if (isRightTriggerDown)
+                    if (IsRightTriggerDown)
                     {
                         switch(rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
                         {
@@ -152,6 +166,8 @@ public class VRInputManager : MonoBehaviour
                                 currFunction = Functions.Rotate;
                                 break;
                         }
+
+                        IsRightTriggerDown = false;
                     }
                 }
 
@@ -164,14 +180,14 @@ public class VRInputManager : MonoBehaviour
         {
             LeftHand.GetComponent<LineRenderer>().SetPositions(new[] { LeftHand.transform.position, LeftHand.transform.position + LeftHand.transform.up * -0.2f });
 
-            if (Physics.Raycast(leftRay, out RaycastHit leftHit, 0.2f, ~5))
+            if (Physics.Raycast(leftRay, out RaycastHit leftHit, 0.2f, (1 << 5)))
             {
 
                 if (leftHit.collider.gameObject.name.Contains("Button"))
                 {
                     leftHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
 
-                    if (isLeftTriggerDown)
+                    if (IsLeftTriggerDown)
                     {
                         switch (leftHit.collider.gameObject.GetComponentInChildren<Text>().text)
                         {
@@ -182,6 +198,8 @@ public class VRInputManager : MonoBehaviour
                                 currFunction = Functions.SpawnSphere;
                                 break;
                         }
+
+                        IsLeftTriggerDown = false;
                     }
                 }
 
@@ -196,8 +214,10 @@ public class VRInputManager : MonoBehaviour
             case Functions.Cut:
                 break;
             case Functions.Add:
+                SphereTool.GetComponent<SphereTool>().AddMode = true;
                 break;
             case Functions.Remove:
+                SphereTool.GetComponent<SphereTool>().AddMode = false;
                 break;
             case Functions.Scale:
                 break;
@@ -206,13 +226,14 @@ public class VRInputManager : MonoBehaviour
             case Functions.Rotate:
                 break;
             case Functions.SpawnCube:
+                polygon.InitCube();
                 break;
             case Functions.SpawnSphere:
+                polygon.InitSphere();
                 break;
         }
 
-
-        isLeftTriggerDown = false;
-        isRightTriggerDown = false;
+        SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove);
+        CuttingTool.SetActive(currFunction == Functions.Cut);
     }
 }

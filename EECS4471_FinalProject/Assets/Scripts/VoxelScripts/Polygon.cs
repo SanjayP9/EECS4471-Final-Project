@@ -5,7 +5,7 @@ using Valve.VR;
 
 public class Polygon : MonoBehaviour
 {
-    public Chunk[,,] Chunks { get; } = new Chunk[6,6,6];
+    public Chunk[,,] Chunks { get; } = new Chunk[12,12,12];
     MeshFilter meshFilter;
 
     float timer = 0.0f;
@@ -45,6 +45,34 @@ public class Polygon : MonoBehaviour
         foreach (Chunk c in Chunks)
         {
             c.RecomputeMesh();
+        }
+    }
+
+    public void InitCube()
+    {
+        for (int x = 0; x < Chunks.GetLength(0); x++)
+        {
+            for (int y = 0; y < Chunks.GetLength(1); y++)
+            {
+                for (int z = 0; z < Chunks.GetLength(2); z++)
+                {
+
+                }
+            }
+        }
+    }
+
+    public void InitSphere()
+    {
+        for (int x = 0; x < Chunks.GetLength(0); x++)
+        {
+            for (int y = 0; y < Chunks.GetLength(1); y++)
+            {
+                for (int z = 0; z < Chunks.GetLength(2); z++)
+                {
+
+                }
+            }
         }
     }
 

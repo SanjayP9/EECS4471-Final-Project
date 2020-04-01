@@ -36,12 +36,12 @@ public class Chunk : MonoBehaviour
     private ComputeShader meshShader;
     private int handle;
 
-    const int TOP = 1;
-    const int BOTTOM = 2;
-    const int LEFT = 4;
-    const int RIGHT = 8;
-    const int FORWARD = 16;
-    const int BACK = 32;
+    public const int TOP = 1;
+    public const int BOTTOM = 2;
+    public const int LEFT = 4;
+    public const int RIGHT = 8;
+    public const int FORWARD = 16;
+    public const int BACK = 32;
 
     private float timer = 0f;
 
@@ -465,9 +465,6 @@ public class Chunk : MonoBehaviour
 
     void Update()
     {
-        if (other != null && !Empty)
-        {
-        }
 
         if (dirty)
         {
@@ -495,6 +492,44 @@ public class Chunk : MonoBehaviour
         return coords;
     }
 
+
+    // Returns a bitmask for all the faces that are out of bounds
+    // 0 is returned if x,y,z is in bounds
+    public Direction InBounds(int x, int y, int z)
+    {
+        Direction result = 0;
+
+        if (x < 0)
+        {
+            result |= Direction.Left;
+        }
+        else if (x >= CHUNK_SIZE)
+        {
+            result |= Direction.Right;
+        }
+
+        if (y < 0)
+        {
+            result |= Direction.Bottom;
+        }
+        else if (y >= CHUNK_SIZE)
+        {
+            result |= Direction.Top;
+        }
+
+        if (z < 0)
+        {
+            result |= Direction.Back;
+        }
+        else if (z >= CHUNK_SIZE)
+        {
+            result |= Direction.Forward;
+        }
+
+        return result;
+    }
+
+
     void OnDrawGizmos()
     {
         if (other != null && !Empty)
@@ -502,21 +537,25 @@ public class Chunk : MonoBehaviour
             Gizmos.color = Color.red;
             //Gizmos.DrawLine(other.transform.position - (other.transform.forward * 0.08f), other.transform.position + (other.transform.forward * 0.08f));
 
-            /*
-            for (int x = 0; x < CHUNK_SIZE; x++)
+            
+            
+        }
+
+        /*
+        for (int x = 0; x < CHUNK_SIZE; x++)
+        {
+            for (int y = 0; y < CHUNK_SIZE; y++)
             {
-                for (int y = 0; y < CHUNK_SIZE; y++)
+                for (int z = 0; z < CHUNK_SIZE; z++)
                 {
-                    for (int z = 0; z < CHUNK_SIZE; z++)
+                    if (Voxels[x][y][z] == 1)
                     {
-                        Gizmos.DrawLine(other.transform.position, transform.position + Center[x][y][z]);
+                        Gizmos.DrawCube((transform.position + (Center[x][y][z] * transform.lossyScale.x)) , Vector3.one * 0.005f);
                     }
                 }
             }
-            */
-
-            Gizmos.DrawRay(other.transform.TransformPoint(0f, 0f, -1f), other.transform.forward);
         }
+        */
     }
 
     /*

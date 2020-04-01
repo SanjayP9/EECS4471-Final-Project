@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class Voxel
 {
@@ -10,14 +11,14 @@ public class Voxel
 
     public Vector3 Position { get; private set; }
 
-    public enum Direction
+    [Flags] public enum Direction
     {
-        Top,
-        Bottom,
-        Left,
-        Right,
-        Forward,
-        Back
+        Top = 1,
+        Bottom = 2,
+        Left = 4,
+        Right = 8,
+        Forward = 16,
+        Back = 32
     }
 
 	public Voxel(bool empty)
