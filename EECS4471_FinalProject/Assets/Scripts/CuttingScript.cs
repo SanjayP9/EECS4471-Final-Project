@@ -67,7 +67,7 @@ public class CuttingScript : MonoBehaviour
                                     {
                                         if (polygon.InBounds(c.X, c.Y - 1, c.Z))
                                         {
-                                            if (!polygon.Chunks[c.X, c.Y - 1, c.Z])
+                                            if (!polygon.Chunks[c.X, c.Y - 1, c.Z].Empty)
                                                 polygon.Chunks[c.X, c.Y - 1, c.Z].MakeDirty();
                                         }
                                     }
@@ -76,7 +76,7 @@ public class CuttingScript : MonoBehaviour
                                     {
                                         if (polygon.InBounds(c.X - 1, c.Y, c.Z))
                                         {
-                                            if (!polygon.Chunks[c.X - 1, c.Y, c.Z])
+                                            if (!polygon.Chunks[c.X - 1, c.Y, c.Z].Empty)
                                                 polygon.Chunks[c.X - 1, c.Y, c.Z].MakeDirty();
                                         }
                                     }
@@ -85,7 +85,7 @@ public class CuttingScript : MonoBehaviour
                                     {
                                         if (polygon.InBounds(c.X + 1, c.Y, c.Z))
                                         {
-                                            if (!polygon.Chunks[c.X + 1, c.Y, c.Z])
+                                            if (!polygon.Chunks[c.X + 1, c.Y, c.Z].Empty)
                                                 polygon.Chunks[c.X + 1, c.Y, c.Z].MakeDirty();
                                         }
                                     }
@@ -94,7 +94,7 @@ public class CuttingScript : MonoBehaviour
                                     {
                                         if (polygon.InBounds(c.X, c.Y, c.Z + 1))
                                         {
-                                            if (!polygon.Chunks[c.X, c.Y, c.Z + 1])
+                                            if (!polygon.Chunks[c.X, c.Y, c.Z + 1].Empty)
                                                 polygon.Chunks[c.X, c.Y, c.Z + 1].MakeDirty();
                                         }
                                     }
@@ -103,7 +103,7 @@ public class CuttingScript : MonoBehaviour
                                     {
                                         if (polygon.InBounds(c.X, c.Y, c.Z - 1))
                                         {
-                                            if (!polygon.Chunks[c.X, c.Y, c.Z - 1])
+                                            if (!polygon.Chunks[c.X, c.Y, c.Z - 1].Empty)
                                                 polygon.Chunks[c.X, c.Y, c.Z - 1].MakeDirty();
                                         }
                                     }
@@ -113,7 +113,7 @@ public class CuttingScript : MonoBehaviour
                     }
                 }
 
-                current += Voxel.VOXEL_SIZE * transform.forward;
+                current += Voxel.VoxelSize * transform.forward;
                 distance = (current - r).magnitude;
             }
         }

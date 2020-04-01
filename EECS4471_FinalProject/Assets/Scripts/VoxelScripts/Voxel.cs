@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class Voxel
 {
-    public const float VOXEL_SIZE = 0.01f;
+    public static float VoxelSize = 0.01f;
+    public const float STANDARD_VOXEL_SIZE = 0.01f;
 
     public bool Empty;
 	private Mesh mesh;
@@ -36,15 +37,15 @@ public class Voxel
 			Vector3[] vertices = new Vector3[8];
 			int[] triangles = new int[36];
 
-            vertices[0] = new Vector3(position.x - VOXEL_SIZE, position.y - VOXEL_SIZE, position.z - VOXEL_SIZE);
-            vertices[1] = new Vector3(position.x + VOXEL_SIZE, position.y - VOXEL_SIZE, position.z - VOXEL_SIZE);
-            vertices[2] = new Vector3(position.x - VOXEL_SIZE, position.y + VOXEL_SIZE, position.z - VOXEL_SIZE);
-            vertices[3] = new Vector3(position.x + VOXEL_SIZE, position.y + VOXEL_SIZE, position.z - VOXEL_SIZE);
+            vertices[0] = new Vector3(position.x - VoxelSize, position.y - VoxelSize, position.z - VoxelSize);
+            vertices[1] = new Vector3(position.x + VoxelSize, position.y - VoxelSize, position.z - VoxelSize);
+            vertices[2] = new Vector3(position.x - VoxelSize, position.y + VoxelSize, position.z - VoxelSize);
+            vertices[3] = new Vector3(position.x + VoxelSize, position.y + VoxelSize, position.z - VoxelSize);
 
-            vertices[4] = new Vector3(position.x - VOXEL_SIZE, position.y - VOXEL_SIZE, position.z + VOXEL_SIZE);
-            vertices[5] = new Vector3(position.x + VOXEL_SIZE, position.y - VOXEL_SIZE, position.z + VOXEL_SIZE);
-            vertices[6] = new Vector3(position.x - VOXEL_SIZE, position.y + VOXEL_SIZE, position.z + VOXEL_SIZE);
-            vertices[7] = new Vector3(position.x + VOXEL_SIZE, position.y + VOXEL_SIZE, position.z + VOXEL_SIZE);
+            vertices[4] = new Vector3(position.x - VoxelSize, position.y - VoxelSize, position.z + VoxelSize);
+            vertices[5] = new Vector3(position.x + VoxelSize, position.y - VoxelSize, position.z + VoxelSize);
+            vertices[6] = new Vector3(position.x - VoxelSize, position.y + VoxelSize, position.z + VoxelSize);
+            vertices[7] = new Vector3(position.x + VoxelSize, position.y + VoxelSize, position.z + VoxelSize);
 
             triangles[0] = 0;
             triangles[1] = 2;

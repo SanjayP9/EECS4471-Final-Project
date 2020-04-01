@@ -172,13 +172,16 @@ public class VRInputManager : MonoBehaviour
                             switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
                             {
                                 case "Scale +":
+                                    Voxel.VoxelSize += 0.01f;
+                                    polygon.RecomputeChunks();
                                     break;
                                 case "Scale -":
+                                    Voxel.VoxelSize -= 0.01f;
+                                    polygon.RecomputeChunks();
                                     break;                              
                             }
                         }
                         IsRightTriggerDown = false;
-                        leftMenuShow = false;
                         GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
                     }
                 }
@@ -204,13 +207,15 @@ public class VRInputManager : MonoBehaviour
                         switch (leftHit.collider.gameObject.GetComponentInChildren<Text>().text)
                         {
                             case "Cube":
-                                currFunction = Functions.SpawnCube;
+                                polygon.InitCube();
                                 break;
                             case "Sphere":
-                                currFunction = Functions.SpawnSphere;
+                                polygon.InitSphere();
+                                break;
+                            case "Clear":
+                                polygon.ClearChunks();
                                 break;
                         }
-                        rightMenuShow = false;
                         IsLeftTriggerDown = false;
                         GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
                     }
@@ -252,10 +257,8 @@ public class VRInputManager : MonoBehaviour
             case Functions.Rotate:
                 break;
             case Functions.SpawnCube:
-                polygon.InitCube();
                 break;
             case Functions.SpawnSphere:
-                polygon.InitSphere();
                 break;
         }
 

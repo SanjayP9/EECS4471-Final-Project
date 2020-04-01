@@ -13,7 +13,6 @@ public class Chunk : MonoBehaviour
     private Polygon polygon;
     private Vector3 chunkOffset;
 
-    private const float VOXEL_SIZE = Voxel.VOXEL_SIZE;
     private Dictionary<Vector3, int> indicesMap;
     private List<Vector3> vertices;
     private List<int> triangles;
@@ -69,8 +68,8 @@ public class Chunk : MonoBehaviour
                 {
                     Voxels[x][y][z] = defaultVoxel;
                     Vector3 v = new Vector3(x, y, z);
-                    Center[x][y][z] = v * VOXEL_SIZE;
-                    Center[x][y][z] += VOXEL_SIZE / 2f * new Vector3(1, -1, 1);
+                    Center[x][y][z] = v * Voxel.VoxelSize;
+                    Center[x][y][z] += Voxel.VoxelSize / 2f * new Vector3(1, -1, 1);
                 }
             }
         }
@@ -83,7 +82,7 @@ public class Chunk : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshRenderer>().material = mat;
         gameObject.AddComponent<BoxCollider>();
-        GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * VOXEL_SIZE;
+        GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * Voxel.VoxelSize;
         GetComponent<BoxCollider>().center = new Vector3(GetComponent<BoxCollider>().size.x / 2f, 0.03f, GetComponent<BoxCollider>().size.z / 2f);
         GetComponent<BoxCollider>().isTrigger = true;
         X = a_x;
@@ -118,8 +117,12 @@ public class Chunk : MonoBehaviour
 
                     if (Voxels[x][y][z] == 1)
                     {
-                        GenerateVoxel(x, y, z, (new Vector3(x, y, z) * VOXEL_SIZE));
+                        GenerateVoxel(x, y, z, (new Vector3(x, y, z) * Voxel.VoxelSize));
+                        
                     }
+
+                    Center[x][y][z] = new Vector3(x, y, z) * Voxel.VoxelSize;
+                    Center[x][y][z] += Voxel.VoxelSize / 2f * new Vector3(1, -1, 1);
 
                     //voxelFaces[x][y][z] = GetFaces(x, y, z);
                 }
@@ -132,7 +135,12 @@ public class Chunk : MonoBehaviour
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.normals = normals.ToArray();
-        transform.position = chunkOffset;
+        GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * Voxel.VoxelSize;
+        GetComponent<BoxCollider>().center = new Vector3(
+            GetComponent<BoxCollider>().size.x / 2f, 
+            GetComponent<BoxCollider>().size.y / 2f - Voxel.VoxelSize, 
+            GetComponent<BoxCollider>().size.z / 2f);
+        transform.position = polygon.transform.position + new Vector3(X, Y, Z) * CHUNK_SIZE * Voxel.VoxelSize;
     }
 
     private void RebuildTriangleArray()
@@ -408,40 +416,40 @@ public class Chunk : MonoBehaviour
         switch (dir)
         {
             case Direction.Top:
-                temp[0] = new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE);
-                temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
-                temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
+                temp[0] = new Vector3(pos.x, pos.y, pos.z + Voxel.VoxelSize);
+                temp[1] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z + Voxel.VoxelSize);
+                temp[2] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z);
                 temp[3] = new Vector3(pos.x, pos.y, pos.z);
                 break;
             case Direction.Bottom:
-                temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
-                temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
-                temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
+                temp[0] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z);
+                temp[1] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z);
+                temp[2] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
+                temp[3] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
                 break;
             case Direction.Left:
-                temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                temp[1] = new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE);
+                temp[0] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
+                temp[1] = new Vector3(pos.x, pos.y, pos.z + Voxel.VoxelSize);
                 temp[2] = new Vector3(pos.x, pos.y, pos.z);
-                temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
+                temp[3] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z);
                 break;
             case Direction.Right:
-                temp[0] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
-                temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
-                temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
-                temp[3] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
+                temp[0] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z);
+                temp[1] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z);
+                temp[2] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z + Voxel.VoxelSize);
+                temp[3] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
                 break;
             case Direction.Forward:
-                temp[0] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
-                temp[1] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE);
-                temp[2] = new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE);
-                temp[3] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE);
+                temp[0] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
+                temp[1] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z + Voxel.VoxelSize);
+                temp[2] = new Vector3(pos.x, pos.y, pos.z + Voxel.VoxelSize);
+                temp[3] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z + Voxel.VoxelSize);
                 break;
             case Direction.Back:
-                temp[0] = new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z);
+                temp[0] = new Vector3(pos.x, pos.y - Voxel.VoxelSize, pos.z);
                 temp[1] = new Vector3(pos.x, pos.y, pos.z);
-                temp[2] = new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z);
-                temp[3] = new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z);
+                temp[2] = new Vector3(pos.x + Voxel.VoxelSize, pos.y, pos.z);
+                temp[3] = new Vector3(pos.x + Voxel.VoxelSize, pos.y - Voxel.VoxelSize, pos.z);
                 break;
         }
 
@@ -483,11 +491,11 @@ public class Chunk : MonoBehaviour
         int[] coords = new int[3];
         Vector3 convertedVector = position - transform.position;
         
-        convertedVector /= VOXEL_SIZE;
+        convertedVector /= Voxel.VoxelSize;
 
-        coords[0] = convertedVector.x < 0f ? -1 : (int) convertedVector.x;
-        coords[1] = convertedVector.y < 0f ? -1 : (int) convertedVector.y;
-        coords[2] = convertedVector.z < 0f ? -1 : (int) convertedVector.z;
+        coords[0] = convertedVector.x < 0f ? -1 : Mathf.RoundToInt(convertedVector.x);
+        coords[1] = convertedVector.y < 0f ? -1 : Mathf.RoundToInt(convertedVector.y);
+        coords[2] = convertedVector.z < 0f ? -1 : Mathf.RoundToInt(convertedVector.z);
 
         return coords;
     }
@@ -548,14 +556,16 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < CHUNK_SIZE; z++)
                 {
-                    if (Voxels[x][y][z] == 1)
+                    if (Voxels[x][y][z] != 1)
                     {
-                        Gizmos.DrawCube((transform.position + (Center[x][y][z] * transform.lossyScale.x)) , Vector3.one * 0.005f);
+                        Gizmos.DrawCube((transform.position + (Center[x][y][z])) , Vector3.one * 0.001f);
                     }
                 }
             }
         }
         */
+        
+        
     }
 
     /*
@@ -564,40 +574,40 @@ public class Chunk : MonoBehaviour
         switch (dir)
         {
             case Direction.Top:
-                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z));
+                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z));
                 vertices.Add(new Vector3(pos.x, pos.y, pos.z));
                 break;
             case Direction.Bottom:
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z + VoxelSize));
                 break;
             case Direction.Left:
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VoxelSize));
                 vertices.Add(new Vector3(pos.x, pos.y, pos.z));
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z));
                 break;
             case Direction.Right:
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z + VoxelSize));
                 break;
             case Direction.Forward:
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VOXEL_SIZE));
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z + VOXEL_SIZE));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x, pos.y, pos.z + VoxelSize));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z + VoxelSize));
                 break;
             case Direction.Back:
-                vertices.Add(new Vector3(pos.x, pos.y - VOXEL_SIZE, pos.z));
+                vertices.Add(new Vector3(pos.x, pos.y - VoxelSize, pos.z));
                 vertices.Add(new Vector3(pos.x, pos.y, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y, pos.z));
-                vertices.Add(new Vector3(pos.x + VOXEL_SIZE, pos.y - VOXEL_SIZE, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y, pos.z));
+                vertices.Add(new Vector3(pos.x + VoxelSize, pos.y - VoxelSize, pos.z));
                 break;
         }
 
