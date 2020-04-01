@@ -6,6 +6,7 @@ TagManager:
   tags:
   - LeftCanvas
   - RightCanvas
+  - Button
   layers:
   - Default
   - TransparentFX
