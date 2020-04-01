@@ -50,6 +50,18 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/XButtonPress",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/AButtonPress",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/BButtonPress",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
