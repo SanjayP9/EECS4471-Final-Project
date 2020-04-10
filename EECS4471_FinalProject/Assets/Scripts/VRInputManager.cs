@@ -26,11 +26,16 @@ public class VRInputManager : MonoBehaviour
 
     private bool spotlightOn = false;
 
-    public GameObject SphereTool, CuttingTool, TranslateTool, TranslateControl, ScaleCanvas;
+    public GameObject SphereTool, CuttingTool, TranslateTool, TranslateControl, ScaleCanvas, ScaleTool1, ScaleTool2, ProxyScale;
     public GameObject LeftHandCanvas, RightHandCanvas, ColourCanvas;
     public GameObject Flashlight;
 
     private Polygon polygon;
+
+    private float origScaleDistance;
+    private float scalingDistance;
+    private float ogVoxelSize;
+    private bool scaleMode;
 
     private GameObject[] buttons;
 
@@ -129,6 +134,9 @@ public class VRInputManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        LeftHand.GetComponent<SphereCollider>().enabled = currFunction == Functions.Scale;
+        RightHand.GetComponent<SphereCollider>().enabled = currFunction == Functions.Scale;
+
         // Menu
         leftRay.origin = LeftHand.transform.position;
         rightRay.origin = RightHand.transform.position;
@@ -194,6 +202,13 @@ public class VRInputManager : MonoBehaviour
                                 break;
                             case "Scale":
                                 currFunction = Functions.Scale;
+                                ProxyScale.transform.position = Camera.main.gameObject.transform.position + Camera.main.gameObject.transform.forward * 0.3f;
+                                ScaleTool1.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * -0.1f + ProxyScale.transform.right * -0.1f;
+                                ScaleTool2.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * 0.1f + ProxyScale.transform.right * 0.1f;
+                                origScaleDistance = Vector3.Distance(ScaleTool1.transform.position, ScaleTool2.transform.position);
+                                ogVoxelSize = Voxel.VoxelSize;
+
+                                ProxyScale.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
                                 break;
                             case "Translate":
                                 currFunction = Functions.Translate;
@@ -319,7 +334,27 @@ public class VRInputManager : MonoBehaviour
                 break;
             case Functions.Remove:
                 break;
-            case Functions.Scale:                
+            case Functions.Scale:
+                if (ScalingTool.LeftCollision && IsLeftTriggerDown && ScalingTool.RightCollision && IsRightTriggerDown)
+                {
+                    scaleMode = true;
+                }
+
+                scalingDistance = Vector3.Distance(ScaleTool1.transform.position, ScaleTool2.transform.position) - origScaleDistance;
+                ProxyScale.transform.localScale = new Vector3(0.1f + scalingDistance / 10f, 0.1f + scalingDistance / 10f, 0.1f + scalingDistance / 10f);
+
+                if (scaleMode && !IsLeftTriggerDown && !IsRightTriggerDown)
+                {
+
+                    Voxel.VoxelSize = ogVoxelSize + scalingDistance / 10f;
+                    ogVoxelSize = Voxel.VoxelSize;
+                    polygon.RecomputeChunks(true);
+                    scaleMode = false;
+                    ProxyScale.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+                    ScaleTool1.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * -0.1f + ProxyScale.transform.right * -0.1f;
+                    ScaleTool2.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * 0.1f + ProxyScale.transform.right * 0.1f;
+
+                }
                 break;
             case Functions.Translate:
                 // If colliding spheres and right trigger down then move control to match tool position then move polygon by delta value
@@ -342,6 +377,9 @@ public class VRInputManager : MonoBehaviour
                 break;
         }
 
+        ScaleTool1.SetActive(currFunction == Functions.Scale);
+        ScaleTool2.SetActive(currFunction == Functions.Scale);
+        ProxyScale.SetActive(currFunction == Functions.Scale);
         ScaleCanvas.SetActive(currFunction == Functions.Scale);
         SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove || currFunction == Functions.Colour);
         CuttingTool.SetActive(currFunction == Functions.Cut);
