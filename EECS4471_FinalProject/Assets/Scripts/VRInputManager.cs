@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +12,8 @@ public class VRInputManager : MonoBehaviour
     public SteamVR_Action_Boolean xButtonPress;
     public SteamVR_Action_Boolean aButtonPress;
     public SteamVR_Action_Boolean bButtonPress;
+
+    public SteamVR_Action_Vibration handVibrate;
 
     public GameObject LeftHand, RightHand;
     private Ray leftRay, rightRay;
@@ -30,6 +32,7 @@ public class VRInputManager : MonoBehaviour
 
     private Polygon polygon;
 
+    private GameObject[] buttons;
 
     private enum Functions
     {
@@ -66,26 +69,32 @@ public class VRInputManager : MonoBehaviour
         rightRay = new Ray();
 
         polygon = GameObject.Find("Polygon").GetComponent<Polygon>();
+        buttons = GameObject.FindGameObjectsWithTag("Button");
     }
 
     public void OnXButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         leftMenuShow = !leftMenuShow;
         LeftHandCanvas.GetComponent<Canvas>().enabled = leftMenuShow;
-        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
+        RightHand.GetComponent<LineRenderer>().enabled = leftMenuShow;
+        handVibrate.Execute(0f, 0.2f, 60f, 0.4f, source);
     }
 
     public void OnAButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         rightMenuShow = !rightMenuShow;
         RightHandCanvas.GetComponent<Canvas>().enabled = rightMenuShow;
-        RightHand.GetComponent<LineRenderer>().enabled = leftMenuShow;
+        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
+        handVibrate.Execute(0f, 0.2f, 60f, 0.4f, source);
+
     }
 
     public void OnBButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         spotlightOn = !spotlightOn;
         Flashlight.GetComponent<Light>().intensity = spotlightOn ? 1 : 0;
+        handVibrate.Execute(0f, 0.2f, 60f, 0.4f, source);
+
     }
 
     public void OnTriggerDown(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
@@ -127,14 +136,10 @@ public class VRInputManager : MonoBehaviour
         leftRay.direction = -1f * LeftHand.transform.up;
         rightRay.direction = -1f * RightHand.transform.up;
 
-        if (leftMenuShow || rightMenuShow)
-        {
-            GameObject[] buttons = GameObject.FindGameObjectsWithTag("Button");
 
-            foreach (GameObject i in buttons)
-            {
-                i.GetComponent<Button>().image.color = Color.white;
-            }
+        foreach (GameObject i in buttons)
+        {
+            i.GetComponent<Button>().image.color = Color.white;
         }
 
         if (Input.GetKeyDown(KeyCode.L))
@@ -197,6 +202,46 @@ public class VRInputManager : MonoBehaviour
                             case "Rotate":
                                 currFunction = Functions.Rotate;
                                 break;
+                        }
+
+                        if (currFunction == Functions.Scale) {
+                            switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
+                            {
+                                case "Scale +":
+                                    Voxel.VoxelSize += 0.01f;
+                                    polygon.RecomputeChunks(true);
+                                    break;
+                                case "Scale -":
+                                    Voxel.VoxelSize -= 0.01f;
+                                    polygon.RecomputeChunks(true);
+                                    break;                              
+                            }
+                        }
+
+                        IsRightTriggerDown = leftMenuShow = LeftHandCanvas.GetComponent<Canvas>().enabled = false;
+
+                        RightHand.GetComponent<LineRenderer>().enabled = currFunction == Functions.Colour;
+                    }
+                }
+
+                RightHand.GetComponent<LineRenderer>().SetPositions(new[] { RightHand.transform.position, rightHit.point });
+            }
+        }
+
+        if (ColourCanvas.activeSelf)
+        {
+            RightHand.GetComponent<LineRenderer>().SetPositions(new Vector3[] { });
+
+            if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, (1 << 5)))
+            {
+                if (rightHit.collider.gameObject.CompareTag("Button"))
+                {
+                    rightHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
+
+                    if (IsRightTriggerDown)
+                    {
+                        switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
+                        {
                             case "Black":
                                 SphereTool.GetComponent<SphereTool>().SetColourMode(0);
                                 break;
@@ -222,22 +267,6 @@ public class VRInputManager : MonoBehaviour
                                 SphereTool.GetComponent<SphereTool>().SetColourMode(7);
                                 break;
                         }
-
-                        if (currFunction == Functions.Scale) {
-                            switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
-                            {
-                                case "Scale +":
-                                    Voxel.VoxelSize += 0.01f;
-                                    polygon.RecomputeChunks(true);
-                                    break;
-                                case "Scale -":
-                                    Voxel.VoxelSize -= 0.01f;
-                                    polygon.RecomputeChunks(true);
-                                    break;                              
-                            }
-                        }
-                        IsRightTriggerDown = leftMenuShow = LeftHandCanvas.GetComponent<Canvas>().enabled =
-                            RightHand.GetComponent<LineRenderer>().enabled = false;
                     }
                 }
 
