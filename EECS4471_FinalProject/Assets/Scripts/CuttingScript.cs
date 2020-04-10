@@ -4,15 +4,12 @@ using UnityEngine;
 
 public class CuttingScript : MonoBehaviour
 {
-    private BoxCollider collider;
-
     private Polygon polygon;
+
     // Start is called before the first frame update
     void Start()
     {
-        collider = GetComponent<BoxCollider>();
         polygon = GameObject.Find("Polygon").GetComponent<Polygon>();
-
     }
 
     void OnTriggerStay(Collider other)
@@ -44,71 +41,33 @@ public class CuttingScript : MonoBehaviour
                     if (c.Voxels[coordinates[0]][coordinates[1]][coordinates[2]] == 1)
                     {
                         c.Voxels[coordinates[0]][coordinates[1]][coordinates[2]] = 0;
-                        c.MakeDirty();
+                        polygon.EnqueueChunkToUpdate(c);
 
-                        for (int a_x = coordinates[0] - 1; a_x <= coordinates[0] + 1; a_x++)
+                        if (coordinates[0] + 1 >= Chunk.CHUNK_SIZE && c.X + 1 < polygon.Chunks.GetLength(0))
                         {
-                            for (int a_y = coordinates[1] - 1; a_y <= coordinates[1] + 1; a_y++)
-                            {
-                                for (int a_z = coordinates[2] - 1; a_z <= coordinates[2] + 1; a_z++)
-                                {
-                                    Voxel.Direction result = c.InBounds(a_x, a_y, a_z);
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X + 1, c.Y, c.Z]);
+                        }
+                        else if (coordinates[0] - 1 < 0 && c.X - 1 >= 0)
+                        {
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X - 1, c.Y, c.Z]);
+                        }
 
-                                    if ((result & Voxel.Direction.Top) == Voxel.Direction.Top)
-                                    {
-                                        if (polygon.InBounds(c.X, c.Y + 1, c.Z))
-                                        {
-                                            if (!polygon.Chunks[c.X, c.Y + 1, c.Z].Empty)
-                                                polygon.Chunks[c.X, c.Y + 1, c.Z].MakeDirty();
-                                        }
-                                    }
+                        if (coordinates[1] + 1 >= Chunk.CHUNK_SIZE && c.Y + 1 < polygon.Chunks.GetLength(1))
+                        {
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y + 1, c.Z]);
+                        }
+                        else if (coordinates[1] - 1 < 0 && c.Y - 1 >= 0)
+                        {
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y - 1, c.Z]);
+                        }
 
-                                    if ((result & Voxel.Direction.Bottom) == Voxel.Direction.Bottom)
-                                    {
-                                        if (polygon.InBounds(c.X, c.Y - 1, c.Z))
-                                        {
-                                            if (!polygon.Chunks[c.X, c.Y - 1, c.Z].Empty)
-                                                polygon.Chunks[c.X, c.Y - 1, c.Z].MakeDirty();
-                                        }
-                                    }
-
-                                    if ((result & Voxel.Direction.Left) == Voxel.Direction.Left)
-                                    {
-                                        if (polygon.InBounds(c.X - 1, c.Y, c.Z))
-                                        {
-                                            if (!polygon.Chunks[c.X - 1, c.Y, c.Z].Empty)
-                                                polygon.Chunks[c.X - 1, c.Y, c.Z].MakeDirty();
-                                        }
-                                    }
-
-                                    if ((result & Voxel.Direction.Right) == Voxel.Direction.Right)
-                                    {
-                                        if (polygon.InBounds(c.X + 1, c.Y, c.Z))
-                                        {
-                                            if (!polygon.Chunks[c.X + 1, c.Y, c.Z].Empty)
-                                                polygon.Chunks[c.X + 1, c.Y, c.Z].MakeDirty();
-                                        }
-                                    }
-
-                                    if ((result & Voxel.Direction.Forward) == Voxel.Direction.Forward)
-                                    {
-                                        if (polygon.InBounds(c.X, c.Y, c.Z + 1))
-                                        {
-                                            if (!polygon.Chunks[c.X, c.Y, c.Z + 1].Empty)
-                                                polygon.Chunks[c.X, c.Y, c.Z + 1].MakeDirty();
-                                        }
-                                    }
-
-                                    if ((result & Voxel.Direction.Back) == Voxel.Direction.Back)
-                                    {
-                                        if (polygon.InBounds(c.X, c.Y, c.Z - 1))
-                                        {
-                                            if (!polygon.Chunks[c.X, c.Y, c.Z - 1].Empty)
-                                                polygon.Chunks[c.X, c.Y, c.Z - 1].MakeDirty();
-                                        }
-                                    }
-                                }
-                            }
+                        if (coordinates[2] + 1 >= Chunk.CHUNK_SIZE && c.Z + 1 < polygon.Chunks.GetLength(2))
+                        {
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y, c.Z + 1]);
+                        }
+                        else if (coordinates[2] - 1 < 0 && c.Z - 1 >= 0)
+                        {
+                            polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y, c.Z - 1]);
                         }
                     }
                 }

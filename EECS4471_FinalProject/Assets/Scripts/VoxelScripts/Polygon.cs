@@ -1,31 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 using UnityEngine;
-using Valve.VR;
+using Debug = UnityEngine.Debug;
 using Vector3 = UnityEngine.Vector3;
 
 public class Polygon : MonoBehaviour
 {
-    public Chunk[,,] Chunks { get; } = new Chunk[12,12,12];
-    MeshFilter meshFilter;
-
-    float timer = 0.0f;
+    public Chunk[,,] Chunks { get; } = new Chunk[20,20,20];
 
     public GameObject ChunkPrefab;
     public ComputeShader MeshShader;
 
-    private Camera mainCam;
-
-    private int x = 0, y = 0, z = 0;
-    private int x_c = 0, y_c = 0, z_c = 0;
+    private HashSet<Chunk> chunksToUpdate = new HashSet<Chunk>();
 
     // Start is called before the first frame update
     void Start()
     {
-        mainCam = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
-
-        meshFilter = GetComponent<MeshFilter>();
-
         for (int x = 0; x < Chunks.GetLength(0); x++)
         {
             for (int y = 0; y < Chunks.GetLength(1); y++)
@@ -42,17 +33,50 @@ public class Polygon : MonoBehaviour
             }
         }
 
-        foreach (Chunk c in Chunks)
-        {
-            c.RecomputeMesh();
-        }
+        RecomputeChunks(true);
     }
 
-    public void RecomputeChunks()
+    public void RecomputeChunks(bool force)
     {
-        foreach (Chunk c in Chunks)
+        int threadSize = (Chunks.GetLength(0) * Chunks.GetLength(1) * Chunks.GetLength(2)) / SystemInfo.processorCount;
+        Thread[] threads = new Thread[SystemInfo.processorCount];
+        int counter = threadSize;
+
+        for (int i = 0; i < threads.Length; i++)
         {
-            c.RecomputeMesh();
+            int start = i * threadSize;
+            int end = counter;
+
+            threads[i] = new Thread(() => RecomputeChunkThread(start, end));
+            threads[i].Start();
+
+            counter += threadSize;
+        }
+
+        foreach (Thread t in threads)
+            t.Join();
+
+        foreach (Chunk c in Chunks)
+            c.SetMesh();
+    }
+
+    private void RecomputeChunkThread(int start, int end)
+    {
+        /*
+                     * int zDirection = i % zLength;
+            int yDirection = (i / zLength) % yLength;
+            int xDirection = i / (yLength * zLength); 
+         */
+        for (int i = start; i < end; i++)
+        {
+            int x = i / (Chunks.GetLength(1) * Chunks.GetLength(2));
+            int y = (i / Chunks.GetLength(2)) % Chunks.GetLength(1);
+            int z = i % Chunks.GetLength(2);
+            
+            Chunks[x,y,z].RecomputeMesh();
+            
+            //GetFaces(x, y, z);
+            //VoxelMasks[i] = GetFaces(x, y, z);
         }
     }
 
@@ -91,7 +115,7 @@ public class Polygon : MonoBehaviour
             }
         }
 
-        RecomputeChunks();
+        RecomputeChunks(true);
     }
 
     public void InitSphere()
@@ -116,7 +140,7 @@ public class Polygon : MonoBehaviour
 
                                 if ((vect - center).magnitude < 0.4f)
                                 {
-                                    Chunks[x, y, z].Voxels[c_x][c_y][c_z] = 1;
+                                    Chunks[x, y, z].Voxels[c_x][c_y][c_z] = 8;
                                 }
                                 else
                                 {
@@ -129,7 +153,7 @@ public class Polygon : MonoBehaviour
             }
         }
 
-        RecomputeChunks();
+        RecomputeChunks(true);
     }
 
     public void ClearChunks()
@@ -154,15 +178,36 @@ public class Polygon : MonoBehaviour
             }
         }
 
-        RecomputeChunks();
+        RecomputeChunks(true);
+    }
+
+    public void EnqueueChunkToUpdate(Chunk c)
+    {
+        if (!chunksToUpdate.Contains(c))
+            chunksToUpdate.Add(c);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.M))
+        if (Input.GetKeyDown(KeyCode.T))
         {
-            RecomputeChunks();
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+            RecomputeChunks(true);
+            timer.Stop();
+
+            Debug.Log(timer.ElapsedMilliseconds + "ms");
+
+            timer.Restart();
+            foreach (Chunk c in Chunks)
+            {
+                c.RecomputeMesh();
+                c.SetMesh();
+            }
+            timer.Stop();
+
+            Debug.Log(timer.ElapsedMilliseconds + "ms");
         }
 
         if (Input.GetKeyDown(KeyCode.A))
@@ -172,6 +217,51 @@ public class Polygon : MonoBehaviour
         else if (Input.GetKeyDown(KeyCode.D))
         {
             Voxel.VoxelSize += 0.01f;
+        }
+
+        if (Input.GetKey(KeyCode.S))
+        {
+            int c_x = Random.Range(0, Chunks.GetLength(0) - 1);
+            int c_y = Random.Range(0, Chunks.GetLength(1) - 1);
+            int c_z = Random.Range(0, Chunks.GetLength(2) - 1);
+
+            int a_x = Random.Range(0, Chunk.CHUNK_SIZE - 1);
+            int a_y = Random.Range(0, Chunk.CHUNK_SIZE - 1);
+            int a_z = Random.Range(0, Chunk.CHUNK_SIZE - 1);
+
+            if (Chunks[c_x, c_y, c_z].Voxels[a_x][a_y][a_z] != 0)
+            {
+                Chunks[c_x, c_y, c_z].ModifyColour(a_x, a_y, a_z,
+                    (byte)Random.Range(1, 7)
+                );
+                //Chunks[c_x, c_y, c_z].SetUVs();
+            }
+            //Chunks[c_x, c_y, c_z].ModifyVoxel(a_x, a_y, a_z, 1);
+
+            //EnqueueChunkToUpdate(Chunks[c_x, c_y, c_z]);
+                //Chunks[c_x, c_y, c_z].SetUVs();
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            InitSphere();
+        }
+
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            ClearChunks();
+        }
+
+
+        if (chunksToUpdate.Count > 0)
+        {
+            foreach (Chunk c in chunksToUpdate)
+            {
+                c.RecomputeMesh();
+                c.SetMesh();
+            }
+
+            chunksToUpdate.Clear();
         }
     }
 

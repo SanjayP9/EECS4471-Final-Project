@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
 using Debug = UnityEngine.Debug;
+using Mode = SphereTool.Mode;
 
 public class VRInputManager : MonoBehaviour
 {
@@ -24,13 +25,18 @@ public class VRInputManager : MonoBehaviour
     private bool spotlightOn = false;
 
     public GameObject SphereTool, CuttingTool, TranslateTool, TranslateControl, ScaleCanvas;
+    public GameObject LeftHandCanvas, RightHandCanvas, ColourCanvas;
+    public GameObject Flashlight;
+
     private Polygon polygon;
+
 
     private enum Functions
     {
         Cut,
         Add,
         Remove,
+        Colour,
         Scale,
         Translate,
         Rotate,
@@ -38,7 +44,7 @@ public class VRInputManager : MonoBehaviour
         SpawnSphere
     }
 
-    private Functions currFunction = Functions.Cut;
+    private Functions currFunction = Functions.Add;
 
     // Start is called before the first frame update
     void Start()
@@ -53,8 +59,8 @@ public class VRInputManager : MonoBehaviour
         InteractWithUI.AddOnStateUpListener(OnTriggerUp, SteamVR_Input_Sources.LeftHand);
         InteractWithUI.AddOnStateUpListener(OnTriggerUp, SteamVR_Input_Sources.RightHand);
 
-        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
-        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
+        //LeftHandCanvas.GetComponent<Canvas>().transform.localScale = Vector3.zero;
+        //RightHandCanvas.GetComponent<Canvas>().transform.localScale = Vector3.zero;
 
         leftRay = new Ray();
         rightRay = new Ray();
@@ -65,20 +71,21 @@ public class VRInputManager : MonoBehaviour
     public void OnXButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         leftMenuShow = !leftMenuShow;
-        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = (leftMenuShow) ? (new Vector3(0.001f, 0.001f, 0.001f)) : (Vector3.zero);
-
+        LeftHandCanvas.GetComponent<Canvas>().enabled = leftMenuShow;
+        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
     }
 
     public void OnAButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         rightMenuShow = !rightMenuShow;
-        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = (rightMenuShow) ? (new Vector3(0.001f, 0.001f, 0.001f)) : (Vector3.zero);
+        RightHandCanvas.GetComponent<Canvas>().enabled = rightMenuShow;
+        RightHand.GetComponent<LineRenderer>().enabled = leftMenuShow;
     }
 
     public void OnBButtonPress(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
         spotlightOn = !spotlightOn;
-        GameObject.FindWithTag("Flashlight").GetComponent<Light>().intensity = (spotlightOn) ? (1) : (0);
+        Flashlight.GetComponent<Light>().intensity = spotlightOn ? 1 : 0;
     }
 
     public void OnTriggerDown(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
@@ -130,8 +137,26 @@ public class VRInputManager : MonoBehaviour
             }
         }
 
-        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
-        RightHand.GetComponent<LineRenderer>().enabled = leftMenuShow;
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            if (currFunction == Functions.Add)
+            {
+                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Add);
+                currFunction = Functions.Remove;
+            }
+            else if (currFunction == Functions.Remove)
+            {
+                currFunction = Functions.Colour;
+                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Remove);
+
+            }
+            else if (currFunction == Functions.Colour)
+            {
+                currFunction = Functions.Add;
+                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Colour);
+            }
+        }
+
 
         if (leftMenuShow)
         {
@@ -139,7 +164,7 @@ public class VRInputManager : MonoBehaviour
 
             if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, (1 << 5)))
             {
-                if (rightHit.collider.gameObject.tag.Equals("Button"))
+                if (rightHit.collider.gameObject.CompareTag("Button"))
                 {
                     rightHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
 
@@ -152,9 +177,15 @@ public class VRInputManager : MonoBehaviour
                                 break;
                             case "Add":
                                 currFunction = Functions.Add;
+                                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Add);
                                 break;
                             case "Remove":
                                 currFunction = Functions.Remove;
+                                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Remove);
+                                break;
+                            case "Colour":
+                                currFunction = Functions.Colour;
+                                SphereTool.GetComponent<SphereTool>().SetMode(Mode.Colour);
                                 break;
                             case "Scale":
                                 currFunction = Functions.Scale;
@@ -166,6 +197,30 @@ public class VRInputManager : MonoBehaviour
                             case "Rotate":
                                 currFunction = Functions.Rotate;
                                 break;
+                            case "Black":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(0);
+                                break;
+                            case "Blue":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(1);
+                                break;
+                            case "Green":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(2);
+                                break;
+                            case "Red":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(3);
+                                break;
+                            case "Yellow":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(4);
+                                break;
+                            case "Purple":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(5);
+                                break;
+                            case "Turquoise":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(6);
+                                break;
+                            case "White":
+                                SphereTool.GetComponent<SphereTool>().SetColourMode(7);
+                                break;
                         }
 
                         if (currFunction == Functions.Scale) {
@@ -173,16 +228,16 @@ public class VRInputManager : MonoBehaviour
                             {
                                 case "Scale +":
                                     Voxel.VoxelSize += 0.01f;
-                                    polygon.RecomputeChunks();
+                                    polygon.RecomputeChunks(true);
                                     break;
                                 case "Scale -":
                                     Voxel.VoxelSize -= 0.01f;
-                                    polygon.RecomputeChunks();
+                                    polygon.RecomputeChunks(true);
                                     break;                              
                             }
                         }
-                        IsRightTriggerDown = false;
-                        GameObject.FindGameObjectWithTag("LeftCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
+                        IsRightTriggerDown = leftMenuShow = LeftHandCanvas.GetComponent<Canvas>().enabled =
+                            RightHand.GetComponent<LineRenderer>().enabled = false;
                     }
                 }
 
@@ -198,7 +253,7 @@ public class VRInputManager : MonoBehaviour
             if (Physics.Raycast(leftRay, out RaycastHit leftHit, 0.2f, (1 << 5)))
             {
 
-                if (leftHit.collider.gameObject.name.Contains("Button"))
+                if (leftHit.collider.gameObject.CompareTag("Button"))
                 {
                     leftHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
 
@@ -216,8 +271,8 @@ public class VRInputManager : MonoBehaviour
                                 polygon.ClearChunks();
                                 break;
                         }
-                        IsLeftTriggerDown = false;
-                        GameObject.FindGameObjectWithTag("RightCanvas").GetComponent<Canvas>().transform.localScale = Vector3.zero;
+                        IsLeftTriggerDown = rightMenuShow = RightHandCanvas.GetComponent<Canvas>().enabled =
+                            LeftHand.GetComponent<LineRenderer>().enabled = false;
                     }
                 }
 
@@ -232,10 +287,8 @@ public class VRInputManager : MonoBehaviour
             case Functions.Cut:
                 break;
             case Functions.Add:
-                SphereTool.GetComponent<SphereTool>().AddMode = true;
                 break;
             case Functions.Remove:
-                SphereTool.GetComponent<SphereTool>().AddMode = false;
                 break;
             case Functions.Scale:                
                 break;
@@ -245,8 +298,6 @@ public class VRInputManager : MonoBehaviour
                 TranslateControl.SetActive(true);
                 if (TranslateTool.GetComponent<SphereTranslate>().collideWithControl && IsRightTriggerDown)
                 {
-                    Debug.Log("collision");
-
                     Vector3 prevPos = TranslateControl.transform.position;
 
                     TranslateControl.transform.position = TranslateTool.transform.position;
@@ -263,9 +314,10 @@ public class VRInputManager : MonoBehaviour
         }
 
         ScaleCanvas.SetActive(currFunction == Functions.Scale);
-        SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove);
+        SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove || currFunction == Functions.Colour);
         CuttingTool.SetActive(currFunction == Functions.Cut);
         TranslateTool.SetActive(currFunction == Functions.Translate);
         TranslateControl.SetActive(currFunction == Functions.Translate);
+        ColourCanvas.SetActive(currFunction == Functions.Colour);
     }
 }
