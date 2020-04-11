@@ -22,19 +22,18 @@ public class Chunk : MonoBehaviour
     // UV Coordinates for colours
     private Vector2[] colourCoordinates =
     {
-        new Vector2(0f, 0.124f), 
-        new Vector2(0.125f, 0.24f),
-        new Vector2(0.26f, 0.374f), 
-        new Vector2(0.385f, 0.49f), 
-        new Vector2(0.51f, 0.624f),
-        new Vector2(0.635f, 0.74f),
-        new Vector2(0.76f, 0.874f), 
-        new Vector2(0.885f, 1f)
+        new Vector2(0f, 0.124f),     // black
+        new Vector2(0.13f, 0.23f),  // blue
+        new Vector2(0.26f, 0.374f),  // green
+        new Vector2(0.385f, 0.49f),  // red
+        new Vector2(0.51f, 0.624f),  // yellow
+        new Vector2(0.635f, 0.74f),  // purple
+        new Vector2(0.78f, 0.79f),  // turqoise
+        new Vector2(0.885f, 1f)      // white
     };
 
     // 3D array for storing our voxels
     public byte[][][] Voxels { get; } = new byte[CHUNK_SIZE][][];
-    private int[] startingIndexes;
     public Vector3[][][] Center = new Vector3[CHUNK_SIZE][][];
 
     // Optimized Mesh (Unused)
@@ -73,6 +72,7 @@ public class Chunk : MonoBehaviour
         mesh.MarkDynamic();
         this.polygon = polygon;
 
+        // Assign voxels and their center coordinates in local space
         for (int x = 0; x < CHUNK_SIZE; x++)
         {
             Voxels[x] = new byte[CHUNK_SIZE][];
@@ -94,11 +94,11 @@ public class Chunk : MonoBehaviour
             }
         }
 
+        // Allocate memory for mesh
         vertices = new Vector3[GRID_SIZE * 24];
         normals = new Vector3[vertices.Length];
         uvs = new Vector2[vertices.Length];
         triangles = new List<int>(short.MaxValue);
-        startingIndexes = new int[GRID_SIZE];
 
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshRenderer>().material = mat;
@@ -106,6 +106,7 @@ public class Chunk : MonoBehaviour
         GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * Voxel.VoxelSize;
         GetComponent<BoxCollider>().center = new Vector3(GetComponent<BoxCollider>().size.x / 2f, 0.03f, GetComponent<BoxCollider>().size.z / 2f);
         GetComponent<BoxCollider>().isTrigger = true;
+
         X = a_x;
         Y = a_y;
         Z = a_z;
@@ -150,6 +151,7 @@ public class Chunk : MonoBehaviour
         GetComponent<MeshRenderer>().enabled = vertexCount > 0;
         mesh.Clear();
 
+        // If there arn't any vertices to make a mesh, skip assigning
         if (vertexCount > 0)
         {
             mesh.SetVertices(vertices);
@@ -171,16 +173,8 @@ public class Chunk : MonoBehaviour
             mesh.SetUVs(0, uvs);
         }
 
-        /*
-        GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * Voxel.VoxelSize;
-        GetComponent<BoxCollider>().center.Set(
-            GetComponent<BoxCollider>().size.x / 2f,
-            GetComponent<BoxCollider>().size.y / 2f - Voxel.VoxelSize,
-            GetComponent<BoxCollider>().size.z / 2f);
-            */
         mesh.RecalculateBounds();
-        
-        
+
         GetComponent<BoxCollider>().center.Set(
             CHUNK_SIZE * Voxel.VoxelSize / 2f,
             CHUNK_SIZE * Voxel.VoxelSize / 2f,
@@ -194,7 +188,6 @@ public class Chunk : MonoBehaviour
             );
 
         transform.position = polygon.transform.position + new Vector3(X, Y, Z) * CHUNK_SIZE * Voxel.VoxelSize;
-
     }
 
 
@@ -217,6 +210,8 @@ public class Chunk : MonoBehaviour
         RecomputeVoxelNeighbour(x, y, z, x, y, z + 1, FORWARD, BACK);
         */
 
+        // If we are on the border of a chunk, queue the adjacent chunk for mesh regeneration
+
         if (x + 1 >= CHUNK_SIZE && X + 1 < polygon.Chunks.GetLength(0))
             polygon.EnqueueChunkToUpdate(polygon.Chunks[X + 1, Y, Z]);
         else if (x - 1 < 0 && X - 1 >= 0)
@@ -235,6 +230,9 @@ public class Chunk : MonoBehaviour
         polygon.EnqueueChunkToUpdate(this);
     }
 
+    /// <summary>
+    /// Modifies a voxel's colour and enqueues the chunk for regeneration
+    /// </summary>
     public void ModifyColour(int x, int y, int z, byte newColour)
     {
         Voxels[x][y][z] = (byte)(newColour + 1);
@@ -243,7 +241,7 @@ public class Chunk : MonoBehaviour
     }
 
     /// <summary>
-    /// Converts a world space coordinate to a x,y,z index in the chunk's space
+    /// Converts a world space coordinate to a x, y, z index in the chunk's space
     /// </summary>
     public int[] VectorToCoord(Vector3 position)
     {
@@ -262,8 +260,6 @@ public class Chunk : MonoBehaviour
     /// </summary>
     private void GenerateVoxel(int x, int y, int z, Vector3 pos)
     {
-        startingIndexes[SquashIndex(x,y,z)] = vertexCount;
-
         if (x + 1 >= CHUNK_SIZE)
         {
             if (X + 1 >= polygon.Chunks.GetLength(0))
@@ -354,6 +350,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     private void GenerateFace(int x, int y, int z, Vector3 pos, Direction dir)
     {
+        // Sets the associated vertices for a particular face
         switch (dir)
         {
             case Direction.Top:
@@ -394,6 +391,7 @@ public class Chunk : MonoBehaviour
                 break;
         }
 
+        // Set normals
         for (int i = vertexCount - 4; i < vertexCount; i++)
         {
             Vector3 vDir = DirToVector(dir);
@@ -407,14 +405,12 @@ public class Chunk : MonoBehaviour
         uvs[vertexCount - 1].Set(colourCoordinates[Voxels[x][y][z] - 1].y, 1f);
     }
 
+    #region Optimized Mesh Code (Unused)
+    /*
     public static int SquashIndex(int x, int y, int z)
     {
         return z + CHUNK_SIZE * (y + CHUNK_SIZE * x);
     }
-
-    #region Optimized Mesh Code (Unused)
-    /*
-
 
     private int GetFaces(int x, int y, int z)
     {

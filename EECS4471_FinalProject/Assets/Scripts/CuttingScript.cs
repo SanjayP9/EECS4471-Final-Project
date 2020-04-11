@@ -19,7 +19,7 @@ public class CuttingScript : MonoBehaviour
         if (c == null) return;
         if (c.Empty) return;
 
-        // Get hit location
+        // Generate 4 rays that represent the bounding volume of the cutting object
         Vector3[] rays = new Vector3[4];
         rays[0] = transform.TransformPoint(0.5f, -0.5f, -0.5f);
         rays[1] = transform.TransformPoint(-0.5f, -0.5f, -0.5f);
@@ -31,6 +31,8 @@ public class CuttingScript : MonoBehaviour
             Vector3 current = r;
             float distance = 0f;
 
+            // Travel along the ray, converting each point into a x, y, z coordinate
+            // If this voxel is on the edge of a chunk, we need to regenerate the adjacent one as well
             while (distance < 0.16f)
             {
                 int[] coordinates = c.VectorToCoord(current);
@@ -44,31 +46,19 @@ public class CuttingScript : MonoBehaviour
                         polygon.EnqueueChunkToUpdate(c);
 
                         if (coordinates[0] + 1 >= Chunk.CHUNK_SIZE && c.X + 1 < polygon.Chunks.GetLength(0))
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X + 1, c.Y, c.Z]);
-                        }
                         else if (coordinates[0] - 1 < 0 && c.X - 1 >= 0)
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X - 1, c.Y, c.Z]);
-                        }
 
                         if (coordinates[1] + 1 >= Chunk.CHUNK_SIZE && c.Y + 1 < polygon.Chunks.GetLength(1))
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y + 1, c.Z]);
-                        }
                         else if (coordinates[1] - 1 < 0 && c.Y - 1 >= 0)
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y - 1, c.Z]);
-                        }
 
                         if (coordinates[2] + 1 >= Chunk.CHUNK_SIZE && c.Z + 1 < polygon.Chunks.GetLength(2))
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y, c.Z + 1]);
-                        }
                         else if (coordinates[2] - 1 < 0 && c.Z - 1 >= 0)
-                        {
                             polygon.EnqueueChunkToUpdate(polygon.Chunks[c.X, c.Y, c.Z - 1]);
-                        }
                     }
                 }
 

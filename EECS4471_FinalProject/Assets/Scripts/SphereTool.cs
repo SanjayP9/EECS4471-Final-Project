@@ -13,8 +13,6 @@ public class SphereTool : MonoBehaviour
         Colour
     }
 
-    private Polygon polygon;
-
     private VRInputManager input;
 
     public Mode CurrentMode { get; private set; }
@@ -23,7 +21,6 @@ public class SphereTool : MonoBehaviour
 
     void Start()
     {
-        polygon = GameObject.Find("Polygon").GetComponent<Polygon>();
         input = GameObject.Find("[CameraRig]").GetComponent<VRInputManager>();
     }
 
@@ -88,37 +85,6 @@ public class SphereTool : MonoBehaviour
         }
 
         input.handVibrate.Execute(0f, 0.1f, 60f, 0.2f, SteamVR_Input_Sources.LeftHand);
-    }
-
-    void OnDrawGizmos()
-    {
-        /*
-        Bounds bounds = GetComponent<SphereCollider>().bounds;
-        Vector3 sphereSize = Vector3.one * 0.006f;
-
-        // top right
-        Gizmos.color = Color.red;
-        Gizmos.DrawCube(bounds.max, sphereSize);
-
-
-        // bottom left
-        Gizmos.color = Color.blue;
-        Gizmos.DrawCube(bounds.min, sphereSize);
-
-        // bottom right
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawCube(new Vector3(
-            bounds.max.x,
-            bounds.min.y,
-            bounds.min.z), sphereSize);
-
-        // top left
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawCube(new Vector3(
-            bounds.min.x,
-            bounds.max.y,
-            bounds.max.z), sphereSize);
-        */
     }
 
     public void SetMode(Mode newMode)

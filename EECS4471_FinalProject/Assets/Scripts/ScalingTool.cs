@@ -17,57 +17,56 @@ public class ScalingTool : MonoBehaviour
     }
 
     private void OnTriggerEnter(Collider other)
-    {        
-        if (gameObject.name == "ScaleSphereL")
+    {
+        switch (gameObject.name)
         {
-            if (!LeftCollision)
-            {
-                LeftCollision = other.gameObject.name == "Controller (left)";
-            }
-        }
-        if (gameObject.name == "ScaleSphereR")
-        {
-            if (!RightCollision)
-            {
-                RightCollision = other.gameObject.name == "Controller (right)";
-            }
+            case "ScaleSphereL":
+                if (!LeftCollision)
+                    LeftCollision = other.gameObject.name == "Controller (left)";
+                break;
+            case "ScaleSphereR":
+                if (!RightCollision)
+                    RightCollision = other.gameObject.name == "Controller (right)";
+                break;
         }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (gameObject.name == "ScaleSphereL")
+        switch (gameObject.name)
         {
-            if (!LeftCollision)
-            {
-                LeftCollision = other.gameObject.name == "Controller (left)";
-            }
+            case "ScaleSphereL":
+                if (other.gameObject.name == "Controller (left)")
+                {
+                    if (!LeftCollision) 
+                        LeftCollision = true;
 
-            if (other.gameObject.name == "Controller (left)" && input.IsLeftTriggerDown && input.IsRightTriggerDown) {
-                transform.position = input.LeftHand.transform.position;
-            }
-        }
+                    if (input.IsLeftTriggerDown && input.IsRightTriggerDown) 
+                        transform.position = input.LeftHand.transform.position;
+                }
+                break;
+            case "ScaleSphereR":
+                if (other.gameObject.name == "Controller (right)")
+                {
+                    if (!RightCollision)
+                        RightCollision = true;
 
-        if (gameObject.name == "ScaleSphereR")
-        {
-            if (!RightCollision)
-            {
-                RightCollision = other.gameObject.name == "Controller (right)";
-            }
-
-            if (other.gameObject.name == "Controller (right)" && input.IsRightTriggerDown && input.IsLeftTriggerDown) {
-                transform.position = input.RightHand.transform.position;
-            }
+                    if (input.IsRightTriggerDown && input.IsLeftTriggerDown)
+                        transform.position = input.RightHand.transform.position;
+                }
+                break;
         }
     }
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.name == "Controller (left)") {
-            LeftCollision = false; 
-        }
-
-        if (other.gameObject.name == "Controller (right)") {
-            RightCollision = false; 
+        switch (other.gameObject.name)
+        {
+            case "Controller (left)":
+                LeftCollision = false;
+                break;
+            case "Controller (right)":
+                RightCollision = false;
+                break;
         }
     }
 }
