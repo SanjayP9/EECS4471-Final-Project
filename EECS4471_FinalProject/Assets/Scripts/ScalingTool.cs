@@ -42,16 +42,19 @@ public class ScalingTool : MonoBehaviour
             {
                 LeftCollision = other.gameObject.name == "Controller (left)";
             }
+
             if (other.gameObject.name == "Controller (left)" && input.IsLeftTriggerDown && input.IsRightTriggerDown) {
                 transform.position = input.LeftHand.transform.position;
             }
         }
+
         if (gameObject.name == "ScaleSphereR")
         {
             if (!RightCollision)
             {
                 RightCollision = other.gameObject.name == "Controller (right)";
             }
+
             if (other.gameObject.name == "Controller (right)" && input.IsRightTriggerDown && input.IsLeftTriggerDown) {
                 transform.position = input.RightHand.transform.position;
             }
@@ -60,11 +63,10 @@ public class ScalingTool : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if (other.gameObject.name == "Controller (left)") {
-            Debug.Log("EXIT LEFT");
             LeftCollision = false; 
         }
+
         if (other.gameObject.name == "Controller (right)") {
-            Debug.Log("EXIT RIGHT");
             RightCollision = false; 
         }
     }

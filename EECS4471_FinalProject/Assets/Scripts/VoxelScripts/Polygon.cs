@@ -7,7 +7,7 @@ using Vector3 = UnityEngine.Vector3;
 
 public class Polygon : MonoBehaviour
 {
-    public Chunk[,,] Chunks { get; } = new Chunk[20,20,20];
+    public Chunk[,,] Chunks { get; } = new Chunk[15,15,15];
 
     public GameObject ChunkPrefab;
     public ComputeShader MeshShader;
@@ -27,7 +27,7 @@ public class Polygon : MonoBehaviour
                     Chunks[x, y, z] = chunk.GetComponent<Chunk>();
                     Chunks[x, y, z].Init(this, x, y, z,
                         transform.position + (new Vector3(x, y, z) * Chunk.CHUNK_SIZE * Voxel.VoxelSize),
-                        GetComponent<MeshRenderer>().material, (x >= 1 && x <= 4 && y >= 1 && y <= 4 && z >= 1 && z <= 4) ? (byte)1 : (byte)0);
+                        GetComponent<MeshRenderer>().material, (x >= 9 && x <= 12 && y >= 3 && y <= 6 && z >= 9 && z <= 12) ? (byte) Random.Range(1, 7) : (byte)0);
                     chunk.layer = 8;
                 }
             }
@@ -58,6 +58,12 @@ public class Polygon : MonoBehaviour
 
         foreach (Chunk c in Chunks)
             c.SetMesh();
+
+        transform.position = new Vector3(
+            -Chunks.GetLength(0) * Voxel.VoxelSize * Chunk.CHUNK_SIZE / 2f,
+            1.8f,
+            -Chunks.GetLength(2) * Voxel.VoxelSize * Chunk.CHUNK_SIZE / 2f
+            );
     }
 
     private void RecomputeChunkThread(int start, int end)
@@ -82,9 +88,6 @@ public class Polygon : MonoBehaviour
 
     public void InitCube()
     {
-        Vector3 center = transform.position + 
-                       (Vector3.one * (Voxel.STANDARD_VOXEL_SIZE * Chunk.CHUNK_SIZE / 2f));
-        
         Voxel.VoxelSize = Voxel.STANDARD_VOXEL_SIZE;
         for (int x = 0; x < Chunks.GetLength(0); x++)
         {
@@ -120,9 +123,12 @@ public class Polygon : MonoBehaviour
 
     public void InitSphere()
     {
+        Voxel.VoxelSize = Voxel.STANDARD_VOXEL_SIZE;
+
         Vector3 center = transform.position + Vector3.one *
             Chunks.GetLength(0) * Chunk.CHUNK_SIZE * Voxel.STANDARD_VOXEL_SIZE / 2f;
 
+        Vector3 vect = Vector3.zero;
         for (int x = 0; x < Chunks.GetLength(0); x++)
         {
             for (int y = 0; y < Chunks.GetLength(1); y++)
@@ -135,17 +141,14 @@ public class Polygon : MonoBehaviour
                         {
                             for (int c_z = 0; c_z < Chunk.CHUNK_SIZE; c_z++)
                             {
-                                Vector3 vect = Chunks[x, y, z].transform.position +
-                                               (new Vector3(c_x,c_y,c_z) * Voxel.STANDARD_VOXEL_SIZE);
+                                vect.Set(
+                                    Chunks[x, y, z].transform.position.x + (c_x * Voxel.VoxelSize),
+                                    Chunks[x, y, z].transform.position.y + (c_y * Voxel.VoxelSize),
+                                    Chunks[x, y, z].transform.position.z + (c_z * Voxel.VoxelSize)
+                                    );
 
-                                if ((vect - center).magnitude < 0.4f)
-                                {
-                                    Chunks[x, y, z].Voxels[c_x][c_y][c_z] = 8;
-                                }
-                                else
-                                {
-                                    Chunks[x, y, z].Voxels[c_x][c_y][c_z] = 0;
-                                }
+                                Chunks[x, y, z].Voxels[c_x][c_y][c_z] =
+                                    (vect - center).magnitude < 0.4f ? (byte) 8 : (byte) 0;
                             }
                         }
                     }

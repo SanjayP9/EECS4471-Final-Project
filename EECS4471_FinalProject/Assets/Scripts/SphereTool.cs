@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Valve.VR;
 
 public class SphereTool : MonoBehaviour
 {
@@ -57,7 +58,7 @@ public class SphereTool : MonoBehaviour
                     switch (CurrentMode)
                     {
                         case Mode.Add:
-                            if (c.Voxels[x][y][z] == 1) continue;
+                            if (c.Voxels[x][y][z] == CurrentColour + 1) continue;
                             break;
                         case Mode.Remove:
                             if (c.Voxels[x][y][z] == 0) continue;
@@ -76,7 +77,7 @@ public class SphereTool : MonoBehaviour
                     {
                         case Mode.Add:
                         case Mode.Remove:
-                            c.ModifyVoxel(x, y, z, CurrentMode == Mode.Add ? CurrentColour : 0);
+                            c.ModifyVoxel(x, y, z, CurrentMode == Mode.Add ? (CurrentColour + 1) : 0);
                             break;
                         case Mode.Colour:
                             c.ModifyColour(x, y, z, CurrentColour);
@@ -85,6 +86,8 @@ public class SphereTool : MonoBehaviour
                 }
             }
         }
+
+        input.handVibrate.Execute(0f, 0.1f, 60f, 0.2f, SteamVR_Input_Sources.LeftHand);
     }
 
     void OnDrawGizmos()

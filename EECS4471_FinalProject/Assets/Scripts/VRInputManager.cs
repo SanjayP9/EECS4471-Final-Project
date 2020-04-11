@@ -36,6 +36,7 @@ public class VRInputManager : MonoBehaviour
     private float scalingDistance;
     private float ogVoxelSize;
     private bool scaleMode;
+    private bool translateMode;
 
     private GameObject[] buttons;
 
@@ -81,7 +82,6 @@ public class VRInputManager : MonoBehaviour
     {
         leftMenuShow = !leftMenuShow;
         LeftHandCanvas.GetComponent<Canvas>().enabled = leftMenuShow;
-        RightHand.GetComponent<LineRenderer>().enabled = leftMenuShow;
         handVibrate.Execute(0f, 0.2f, 60f, 0.4f, source);
     }
 
@@ -89,7 +89,6 @@ public class VRInputManager : MonoBehaviour
     {
         rightMenuShow = !rightMenuShow;
         RightHandCanvas.GetComponent<Canvas>().enabled = rightMenuShow;
-        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
         handVibrate.Execute(0f, 0.2f, 60f, 0.4f, source);
 
     }
@@ -136,6 +135,11 @@ public class VRInputManager : MonoBehaviour
     {
         LeftHand.GetComponent<SphereCollider>().enabled = currFunction == Functions.Scale;
         RightHand.GetComponent<SphereCollider>().enabled = currFunction == Functions.Scale;
+        RightHand.GetComponent<LineRenderer>().enabled = currFunction == Functions.Colour || leftMenuShow;
+        LeftHand.GetComponent<LineRenderer>().enabled = rightMenuShow;
+
+        LeftHandCanvas.SetActive(leftMenuShow);
+        RightHandCanvas.SetActive(rightMenuShow);
 
         // Menu
         leftRay.origin = LeftHand.transform.position;
@@ -203,8 +207,8 @@ public class VRInputManager : MonoBehaviour
                             case "Scale":
                                 currFunction = Functions.Scale;
                                 ProxyScale.transform.position = Camera.main.gameObject.transform.position + Camera.main.gameObject.transform.forward * 0.3f;
-                                ScaleTool1.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * -0.1f + ProxyScale.transform.right * -0.1f;
-                                ScaleTool2.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * 0.1f + ProxyScale.transform.right * 0.1f;
+                                ScaleTool1.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * -0.025f + ProxyScale.transform.right * -0.025f;
+                                ScaleTool2.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * 0.025f + ProxyScale.transform.right * 0.025f;
                                 origScaleDistance = Vector3.Distance(ScaleTool1.transform.position, ScaleTool2.transform.position);
                                 ogVoxelSize = Voxel.VoxelSize;
 
@@ -235,60 +239,15 @@ public class VRInputManager : MonoBehaviour
 
                         IsRightTriggerDown = leftMenuShow = LeftHandCanvas.GetComponent<Canvas>().enabled = false;
 
-                        RightHand.GetComponent<LineRenderer>().enabled = currFunction == Functions.Colour;
+                        
                     }
                 }
 
                 RightHand.GetComponent<LineRenderer>().SetPositions(new[] { RightHand.transform.position, rightHit.point });
             }
         }
-
-        if (ColourCanvas.activeSelf)
-        {
+        else
             RightHand.GetComponent<LineRenderer>().SetPositions(new Vector3[] { });
-
-            if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, (1 << 5)))
-            {
-                if (rightHit.collider.gameObject.CompareTag("Button"))
-                {
-                    rightHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
-
-                    if (IsRightTriggerDown)
-                    {
-                        switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
-                        {
-                            case "Black":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(0);
-                                break;
-                            case "Blue":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(1);
-                                break;
-                            case "Green":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(2);
-                                break;
-                            case "Red":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(3);
-                                break;
-                            case "Yellow":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(4);
-                                break;
-                            case "Purple":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(5);
-                                break;
-                            case "Turquoise":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(6);
-                                break;
-                            case "White":
-                                SphereTool.GetComponent<SphereTool>().SetColourMode(7);
-                                break;
-                        }
-                    }
-                }
-
-                RightHand.GetComponent<LineRenderer>().SetPositions(new[] { RightHand.transform.position, rightHit.point });
-            }
-        }
-
 
         if (rightMenuShow)
         {
@@ -351,40 +310,90 @@ public class VRInputManager : MonoBehaviour
                     polygon.RecomputeChunks(true);
                     scaleMode = false;
                     ProxyScale.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-                    ScaleTool1.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * -0.1f + ProxyScale.transform.right * -0.1f;
-                    ScaleTool2.transform.position = ProxyScale.transform.position + ProxyScale.transform.up * 0.1f + ProxyScale.transform.right * 0.1f;
-
+                    ScaleTool1.transform.position = ProxyScale.GetComponent<BoxCollider>().bounds.min;
+                    ScaleTool2.transform.position = ProxyScale.GetComponent<BoxCollider>().bounds.max;
                 }
                 break;
             case Functions.Translate:
                 // If colliding spheres and right trigger down then move control to match tool position then move polygon by delta value
                 TranslateTool.SetActive(true);
                 TranslateControl.SetActive(true);
-                if (TranslateTool.GetComponent<SphereTranslate>().collideWithControl && IsRightTriggerDown)
+                if (TranslateTool.GetComponent<SphereTranslate>().collideWithControl)
                 {
-                    Vector3 prevPos = TranslateControl.transform.position;
+                    if (IsRightTriggerDown)
+                    {
+                        Vector3 prevPos = TranslateControl.transform.position;
 
-                    TranslateControl.transform.position = TranslateTool.transform.position;
+                        TranslateControl.transform.position = TranslateTool.transform.position;
 
-                    polygon.transform.position += TranslateTool.transform.position - prevPos;
+                        polygon.transform.position += TranslateTool.transform.position - prevPos;
+                        translateMode = true;
+                    }
+                    else if (translateMode)
+                    {
+                        TranslateControl.transform.position = Camera.main.gameObject.transform.position + Camera.main.gameObject.transform.forward * 0.2f;
+                        translateMode = false;
+                    }
                 }
+
                 break;
-            case Functions.Rotate:
-                break;
-            case Functions.SpawnCube:
-                break;
-            case Functions.SpawnSphere:
+            case Functions.Colour:
+                if (Physics.Raycast(rightRay, out RaycastHit rightHit, 0.2f, (1 << 5)))
+                {
+                    if (rightHit.collider.gameObject.CompareTag("Button"))
+                    {
+                        rightHit.collider.gameObject.GetComponent<Button>().image.color = Color.grey;
+
+                        if (IsRightTriggerDown)
+                        {
+                            switch (rightHit.collider.gameObject.GetComponentInChildren<Text>().text)
+                            {
+                                case "Black":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(0);
+                                    break;
+                                case "Blue":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(1);
+                                    break;
+                                case "Green":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(2);
+                                    break;
+                                case "Red":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(3);
+                                    break;
+                                case "Yellow":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(4);
+                                    break;
+                                case "Purple":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(5);
+                                    break;
+                                case "Turquoise":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(6);
+                                    break;
+                                case "White":
+                                    SphereTool.GetComponent<SphereTool>().SetColourMode(7);
+                                    break;
+                            }
+                        }
+                    }
+
+                    RightHand.GetComponent<LineRenderer>().SetPositions(new[] { RightHand.transform.position, rightHit.point });
+                }
+                else
+                {
+                    RightHand.GetComponent<LineRenderer>().SetPositions(new Vector3[] { });
+                }
+
                 break;
         }
 
         ScaleTool1.SetActive(currFunction == Functions.Scale);
         ScaleTool2.SetActive(currFunction == Functions.Scale);
         ProxyScale.SetActive(currFunction == Functions.Scale);
-        ScaleCanvas.SetActive(currFunction == Functions.Scale);
+        //ScaleCanvas.SetActive(currFunction == Functions.Scale);
         SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove || currFunction == Functions.Colour);
         CuttingTool.SetActive(currFunction == Functions.Cut);
         TranslateTool.SetActive(currFunction == Functions.Translate);
         TranslateControl.SetActive(currFunction == Functions.Translate);
-        ColourCanvas.SetActive(currFunction == Functions.Colour);
+        ColourCanvas.SetActive(currFunction == Functions.Colour || currFunction == Functions.Add);
     }
 }

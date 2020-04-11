@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using UnityEditor.Build;
 using UnityEngine;
 using Direction = Voxel.Direction;
 
@@ -170,12 +171,30 @@ public class Chunk : MonoBehaviour
             mesh.SetUVs(0, uvs);
         }
 
+        /*
         GetComponent<BoxCollider>().size = (Vector3.one * CHUNK_SIZE) * Voxel.VoxelSize;
         GetComponent<BoxCollider>().center.Set(
             GetComponent<BoxCollider>().size.x / 2f,
             GetComponent<BoxCollider>().size.y / 2f - Voxel.VoxelSize,
             GetComponent<BoxCollider>().size.z / 2f);
+            */
+        mesh.RecalculateBounds();
+        
+        
+        GetComponent<BoxCollider>().center.Set(
+            CHUNK_SIZE * Voxel.VoxelSize / 2f,
+            CHUNK_SIZE * Voxel.VoxelSize / 2f,
+            CHUNK_SIZE * Voxel.VoxelSize / 2f
+            );
+
+        GetComponent<BoxCollider>().size.Set(
+            CHUNK_SIZE * Voxel.VoxelSize,
+            CHUNK_SIZE * Voxel.VoxelSize,
+            CHUNK_SIZE * Voxel.VoxelSize
+            );
+
         transform.position = polygon.transform.position + new Vector3(X, Y, Z) * CHUNK_SIZE * Voxel.VoxelSize;
+
     }
 
 
@@ -212,6 +231,8 @@ public class Chunk : MonoBehaviour
             polygon.EnqueueChunkToUpdate(polygon.Chunks[X, Y, Z + 1]);
         else if (z - 1 < 0 && Z - 1 >= 0)
             polygon.EnqueueChunkToUpdate(polygon.Chunks[X, Y, Z - 1]);
+
+        polygon.EnqueueChunkToUpdate(this);
     }
 
     public void ModifyColour(int x, int y, int z, byte newColour)
