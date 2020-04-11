@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Valve.VR;
-using Debug = UnityEngine.Debug;
 using Mode = SphereTool.Mode;
 
 public class VRInputManager : MonoBehaviour
@@ -96,8 +95,6 @@ public class VRInputManager : MonoBehaviour
 
     public void OnTriggerDown(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
-        //Debug.Log((source == SteamVR_Input_Sources.LeftHand ? "Left" : "Right") + " Trigger was pressed");
-
         // If left trigger is pressed and menu is showing the click buttons that are being pointed at
         if (source == SteamVR_Input_Sources.LeftHand)
             IsLeftTriggerDown = true;
@@ -107,8 +104,6 @@ public class VRInputManager : MonoBehaviour
 
     public void OnTriggerUp(SteamVR_Action_Boolean action, SteamVR_Input_Sources source)
     {
-        //Debug.Log((source == SteamVR_Input_Sources.LeftHand ? "Left" : "Right") + " Trigger was released");
-
         if (source == SteamVR_Input_Sources.LeftHand)
             IsLeftTriggerDown = false;
         else
@@ -351,7 +346,6 @@ public class VRInputManager : MonoBehaviour
         ScaleTool1.SetActive(currFunction == Functions.Scale);
         ScaleTool2.SetActive(currFunction == Functions.Scale);
         ProxyScale.SetActive(currFunction == Functions.Scale);
-        //ScaleCanvas.SetActive(currFunction == Functions.Scale);
         SphereTool.SetActive(currFunction == Functions.Add || currFunction == Functions.Remove || currFunction == Functions.Colour);
         CuttingTool.SetActive(currFunction == Functions.Cut);
         TranslateTool.SetActive(currFunction == Functions.Translate);
