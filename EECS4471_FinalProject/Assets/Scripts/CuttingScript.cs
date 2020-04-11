@@ -40,7 +40,7 @@ public class CuttingScript : MonoBehaviour
                 if (coordinates[0] >= 0 && coordinates[1] >= 0 && coordinates[2] >= 0 &&
                     coordinates[0] < Chunk.CHUNK_SIZE && coordinates[1] < Chunk.CHUNK_SIZE && coordinates[2] < Chunk.CHUNK_SIZE)
                 {
-                    if (c.Voxels[coordinates[0]][coordinates[1]][coordinates[2]] == 1)
+                    if (c.Voxels[coordinates[0]][coordinates[1]][coordinates[2]] > 0)
                     {
                         c.Voxels[coordinates[0]][coordinates[1]][coordinates[2]] = 0;
                         polygon.EnqueueChunkToUpdate(c);
