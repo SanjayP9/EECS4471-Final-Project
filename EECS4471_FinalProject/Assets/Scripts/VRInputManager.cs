@@ -351,5 +351,8 @@ public class VRInputManager : MonoBehaviour
         TranslateTool.SetActive(currFunction == Functions.Translate);
         TranslateControl.SetActive(currFunction == Functions.Translate);
         ColourCanvas.SetActive(currFunction == Functions.Colour || currFunction == Functions.Add);
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+            Application.Quit();
     }
 }
