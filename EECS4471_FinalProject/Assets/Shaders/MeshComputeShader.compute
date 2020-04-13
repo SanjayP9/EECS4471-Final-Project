@@ -1,0 +1,148 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#define CHUNK_SIZE 8
+
+#define TOP 1
+#define BOTTOM 2
+#define LEFT 4
+#define RIGHT 8
+#define FORWARD 16
+#define BACK 32
+
+StructuredBuffer<int> voxelMasks;
+StructuredBuffer<int> faceArray;
+StructuredBuffer<int> vertSum;
+
+RWStructuredBuffer<float3> vertices;
+RWStructuredBuffer<float3> normals;
+RWStructuredBuffer<int> triangles;
+
+float voxelSize;
+
+float3 GetNormal(int bit)
+{
+    if ((bit & TOP) == TOP) 
+        return float3(0, 1, 0);
+
+    if ((bit & BOTTOM) == BOTTOM)
+        return float3(0, -1, 0);
+
+    if ((bit & LEFT) == LEFT)
+        return float3(-1, 0, 0);
+
+    if ((bit & RIGHT) == RIGHT)
+        return float3(1, 0, 0);
+
+    if ((bit & FORWARD) == FORWARD)
+        return float3(0, 0, 1);
+
+    if ((bit & BACK) == BACK)
+        return float3(0, 0, -1);
+
+    return float3(0, 0, 0);
+}
+
+void GenerateTriangles(int tri, int vertex)
+{
+    triangles[tri] = vertex;
+    triangles[tri + 1] = vertex + 1;
+    triangles[tri + 2] = vertex + 2;
+
+    triangles[tri + 3] = vertex;
+    triangles[tri + 4] = vertex + 2;
+    triangles[tri + 5] = vertex + 3;
+}
+
+void GenerateNormals(int index, int direction)
+{
+    normals[index++] = GetNormal(direction);
+    normals[index++] = GetNormal(direction);
+    normals[index++] = GetNormal(direction);
+    normals[index++] = GetNormal(direction);
+}
+
+void GenerateVoxel(float x, float y, float z, int vertexOffset, int mask)
+{
+    int triangleIndex = vertexOffset / 4 * 6;
+
+    if ((mask & TOP) == TOP)
+    {
+        vertices[vertexOffset++] = float3(x, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z);
+        vertices[vertexOffset++] = float3(x, y, z);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, TOP);
+        triangleIndex += 6;
+    }
+
+    if ((mask & BOTTOM) == BOTTOM)
+    {
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z + voxelSize);
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z + voxelSize);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, BOTTOM);
+        triangleIndex += 6;
+    }
+
+    if ((mask & LEFT) == LEFT)
+    {
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z + voxelSize);
+        vertices[vertexOffset++] = float3(x, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x, y, z);
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, LEFT);
+        triangleIndex += 6;
+    }
+
+    if ((mask & RIGHT) == RIGHT)
+    {
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z + voxelSize);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, RIGHT);
+        triangleIndex += 6;
+    }
+
+    if ((mask & FORWARD) == FORWARD)
+    {
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z + voxelSize);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x, y, z + voxelSize);
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z + voxelSize);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, FORWARD);
+        triangleIndex += 6;
+    }
+
+    if ((mask & BACK) == BACK)
+    {
+        vertices[vertexOffset++] = float3(x, y - voxelSize, z);
+        vertices[vertexOffset++] = float3(x, y, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y, z);
+        vertices[vertexOffset++] = float3(x + voxelSize, y - voxelSize, z);
+        GenerateTriangles(triangleIndex, vertexOffset - 4);
+        GenerateNormals(vertexOffset - 4, BACK);
+        triangleIndex += 6;
+    }
+}
+
+[numthreads(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int voxelID = id.z + CHUNK_SIZE * (id.y + CHUNK_SIZE * id.x);
+
+    //x % 8, (x / 8) % 8, (x / (8 * 8))
+    //vertices[voxelID] = float3(x,y,z);
+    
+    GenerateVoxel(id.x * voxelSize, id.y * voxelSize, id.z * voxelSize,
+        vertSum[voxelID] - (faceArray[voxelID] * 4),
+        voxelMasks[voxelID]
+    );
+}
