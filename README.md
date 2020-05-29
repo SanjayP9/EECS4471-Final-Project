@@ -1,5 +1,7 @@
 # Virtual Reality Modelling Tool
-![Banner](img/banner.png?raw=true)
+
+## Video Summary
+[![Banner](img/thumbnail.png?raw=true)](https://drive.google.com/file/d/1yJzBC5Nqf4hfoCyWagJtEY3iWTHvHPYn/preview)
 
 A voxel based modelling tool that allows the user to interact with a mesh in real time using virtual reality.
 
